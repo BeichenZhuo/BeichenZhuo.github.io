@@ -1,0 +1,21 @@
+<style>
+/* 全局页面字体 */
+html,body{
+  font-family: "Microsoft YaHei",PingFang SC,SimHei,sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+}
+/* 正文内容字体 */
+.post-content{
+  font-family: "思源宋体",SimSun,"Microsoft YaHei",serif;
+  font-size: 17px;
+}
+/* 代码块等宽字体（写C++、命令行必备） */
+pre,code{
+  font-family: "Fira Code",Consolas,monospace;
+}
+/* 数学公式字体优化 */
+.MathJax{
+  font-size: 105% !important;
+}
+</style>
