@@ -1,0 +1,257 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>PINNOCIO库CRTP（奇异模板递归） | BeichenZhuo的Blog</title><meta name="author" content="BeichenZhuo"><meta name="copyright" content="BeichenZhuo"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="Pinocchio库中CRTP（奇异模板递归）模式的实现与分析">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PINNOCIO库CRTP（奇异模板递归）">
+<meta property="og:url" content="https://beichenzhuo.github.io/2025/06/25/ZBC-PINNOCIO%E5%BA%93CRTP/index.html">
+<meta property="og:site_name" content="BeichenZhuo的Blog">
+<meta property="og:description" content="Pinocchio库中CRTP（奇异模板递归）模式的实现与分析">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://beichenzhuo.github.io/img/dog-icon.png">
+<meta property="article:published_time" content="2025-06-25T03:30:00.000Z">
+<meta property="article:modified_time" content="2026-06-25T09:32:42.136Z">
+<meta property="article:author" content="BeichenZhuo">
+<meta property="article:tag" content="C++">
+<meta property="article:tag" content="CRTP">
+<meta property="article:tag" content="Pinocchio">
+<meta property="article:tag" content="模板元编程">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://beichenzhuo.github.io/img/dog-icon.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "PINNOCIO库CRTP（奇异模板递归）",
+  "url": "https://beichenzhuo.github.io/2025/06/25/ZBC-PINNOCIO%E5%BA%93CRTP/",
+  "image": "https://beichenzhuo.github.io/img/dog-icon.png",
+  "datePublished": "2025-06-25T03:30:00.000Z",
+  "dateModified": "2026-06-25T09:32:42.136Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "BeichenZhuo",
+      "url": "https://BeichenZhuo.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://beichenzhuo.github.io/2025/06/25/ZBC-PINNOCIO%E5%BA%93CRTP/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.5"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":-1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'PINNOCIO库CRTP（奇异模板递归）',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/custom.css"><meta name="generator" content="Hexo 8.1.2"></head><body><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">BeichenZhuo的Blog</span></a><a class="nav-page-title" href="/"><span class="site-name">PINNOCIO库CRTP（奇异模板递归）</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div></div></nav><div id="post-info"><h1 class="post-title">PINNOCIO库CRTP（奇异模板递归）</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-06-25T03:30:00.000Z" title="发表于 2025-06-25 11:30:00">2025-06-25</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-06-25T09:32:42.136Z" title="更新于 2026-06-25 17:32:42">2026-06-25</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="CRTP模式概述"><a href="#CRTP模式概述" class="headerlink" title="CRTP模式概述"></a>CRTP模式概述</h1><p>CRTP（奇异模板递归，Curiously Recurring Template Pattern）模式实现了接口继承，但没有虚函数表的开销。所有的类型检查、函数生成全都在编译期完成。</p>
+<p><strong>缺点：</strong> IDE几乎没法做到正确跳转。</p>
+<h1 id="基础架构"><a href="#基础架构" class="headerlink" title="基础架构"></a>基础架构</h1><h2 id="fwd-hpp-——-类型萃取与基类定义"><a href="#fwd-hpp-——-类型萃取与基类定义" class="headerlink" title="fwd.hpp —— 类型萃取与基类定义"></a>fwd.hpp —— 类型萃取与基类定义</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">namespace</span> pinocchio</span><br><span class="line">&#123;</span><br><span class="line">  <span class="comment">// CRTP的基类，由一个空的 traits (类型萃取)和一个基本上是空的类NumericalBase组成</span></span><br><span class="line">  <span class="keyword">template</span>&lt;<span class="keyword">class</span> <span class="title class_">C</span>&gt;</span><br><span class="line">  <span class="keyword">struct</span> <span class="title class_">traits</span></span><br><span class="line">  &#123;</span><br><span class="line">  &#125;;</span><br><span class="line">  </span><br><span class="line">  <span class="comment">// 所有数值（SE3群等）的基类</span></span><br><span class="line">  <span class="keyword">template</span>&lt;<span class="keyword">class</span> <span class="title class_">Derived</span>&gt;</span><br><span class="line">  <span class="keyword">struct</span> <span class="title class_">NumericalBase</span></span><br><span class="line">  &#123;</span><br><span class="line">    <span class="comment">// 子类必须实现Scalar，即指定是float还是double（或者也可以是float）</span></span><br><span class="line">    <span class="comment">// 子类如果没有Scalar，编译期直接报错</span></span><br><span class="line">    <span class="comment">// C++模板延迟实例化，惰性编译。traits&lt;Derived&gt;::Scalar目前并不存在</span></span><br><span class="line">    <span class="comment">// 但是编译的时候没有就报错</span></span><br><span class="line">    <span class="keyword">typedef</span> <span class="keyword">typename</span> traits&lt;Derived&gt;::Scalar Scalar;</span><br><span class="line">  &#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="se3-hpp-——-入口文件与宏定义"><a href="#se3-hpp-——-入口文件与宏定义" class="headerlink" title="se3.hpp —— 入口文件与宏定义"></a>se3.hpp —— 入口文件与宏定义</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// se3 是由 se3-base 和 se3-tpl 拼起来的</span></span><br><span class="line"><span class="comment">// 用户只需要包含 se3.hpp</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 先不用管宏定义，这些其实是SE3必须萃取的类型</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> PINOCCHIO_SE3_TYPEDEF_GENERIC(Derived, TYPENAME)                                           \</span></span><br><span class="line"><span class="meta">  typedef TYPENAME traits<span class="string">&lt;Derived&gt;</span>::Scalar Scalar;                                                 \</span></span><br><span class="line"><span class="meta">  typedef TYPENAME traits<span class="string">&lt;Derived&gt;</span>::AngularType AngularType;                                       \</span></span><br><span class="line"><span class="meta">  typedef TYPENAME traits<span class="string">&lt;Derived&gt;</span>::LinearType LinearType;                                         \</span></span><br><span class="line"><span class="meta">  typedef TYPENAME traits<span class="string">&lt;Derived&gt;</span>::AngularRef AngularRef;                                         \</span></span><br><span class="line"><span class="meta">  typedef TYPENAME traits<span class="string">&lt;Derived&gt;</span>::LinearRef LinearRef;                                           \</span></span><br><span class="line"><span class="meta">  typedef TYPENAME traits<span class="string">&lt;Derived&gt;</span>::ConstAngularRef ConstAngularRef;                               \</span></span><br><span class="line"><span class="meta">  typedef TYPENAME traits<span class="string">&lt;Derived&gt;</span>::ConstLinearRef ConstLinearRef;                                 \</span></span><br><span class="line"><span class="meta">  typedef TYPENAME traits<span class="string">&lt;Derived&gt;</span>::ActionMatrixType ActionMatrixType;                             \</span></span><br><span class="line"><span class="meta">  typedef TYPENAME traits<span class="string">&lt;Derived&gt;</span>::HomogeneousMatrixType HomogeneousMatrixType;                   \</span></span><br><span class="line"><span class="meta">  typedef TYPENAME traits<span class="string">&lt;Derived&gt;</span>::PlainType PlainType;                                           \</span></span><br><span class="line"><span class="meta">  enum                                                                                             \</span></span><br><span class="line"><span class="meta">  &#123;                                                                                                \</span></span><br><span class="line"><span class="meta">    Options = traits<span class="string">&lt;Derived&gt;</span>::Options,                                                            \</span></span><br><span class="line"><span class="meta">    LINEAR = traits<span class="string">&lt;Derived&gt;</span>::LINEAR,                                                              \</span></span><br><span class="line"><span class="meta">    ANGULAR = traits<span class="string">&lt;Derived&gt;</span>::ANGULAR                                                             \</span></span><br><span class="line"><span class="meta">  &#125;</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> PINOCCHIO_SE3_TYPEDEF_TPL(Derived) PINOCCHIO_SE3_TYPEDEF_GENERIC(Derived, typename)</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> PINOCCHIO_SE3_TYPEDEF(Derived)                                                             \</span></span><br><span class="line"><span class="meta">  PINOCCHIO_SE3_TYPEDEF_GENERIC(Derived, PINOCCHIO_MACRO_EMPTY_ARG)</span></span><br><span class="line">  </span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;pinocchio/spatial/se3-base.hpp&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;pinocchio/spatial/se3-tpl.hpp&quot;</span></span></span><br></pre></td></tr></table></figure>
+<h2 id="se3-base-hpp-——-CRTP父类接口定义"><a href="#se3-base-hpp-——-CRTP父类接口定义" class="headerlink" title="se3-base.hpp —— CRTP父类接口定义"></a>se3-base.hpp —— CRTP父类接口定义</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">namespace</span> pinocchio</span><br><span class="line">&#123;</span><br><span class="line">  <span class="comment">// CRTP 父类的模板是子类，套娃</span></span><br><span class="line">  <span class="keyword">template</span>&lt;<span class="keyword">class</span> <span class="title class_">Derived</span>&gt;</span><br><span class="line">  <span class="keyword">struct</span> <span class="title class_">SE3Base</span> : NumericalBase&lt;Derived&gt;</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="comment">// 用了之前的宏定义</span></span><br><span class="line">    <span class="comment">// 这里列出了什么类型，子类必须萃取什么类型</span></span><br><span class="line">    <span class="built_in">PINOCCHIO_SE3_TYPEDEF_TPL</span>(Derived);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 向下造型，父类转换子类</span></span><br><span class="line">    <span class="function">Derived &amp; <span class="title">derived</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">      <span class="keyword">return</span> *<span class="built_in">static_cast</span>&lt;Derived *&gt;(<span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="type">const</span> Derived &amp; <span class="title">derived</span><span class="params">()</span> <span class="type">const</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">      <span class="keyword">return</span> *<span class="built_in">static_cast</span>&lt;<span class="type">const</span> Derived *&gt;(<span class="keyword">this</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 这个时候父类其实不知道子类有没有实现 rotation_impl()</span></span><br><span class="line">    <span class="comment">// 就是调用，如果子类没实现编译就会报错</span></span><br><span class="line">    <span class="comment">// 起到强制子类实现接口的作用，只要继承 SE3Base，必须实现 rotation_impl()</span></span><br><span class="line">    <span class="function">ConstAngularRef <span class="title">rotation</span><span class="params">()</span> <span class="type">const</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">      <span class="keyword">return</span> <span class="built_in">derived</span>().<span class="built_in">rotation_impl</span>();</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="se3-tpl-hpp-——-子类实现"><a href="#se3-tpl-hpp-——-子类实现" class="headerlink" title="se3-tpl.hpp —— 子类实现"></a>se3-tpl.hpp —— 子类实现</h2><figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">namespace</span> pinocchio</span><br><span class="line">&#123;</span><br><span class="line">  <span class="comment">// 必须特化 traits，至少要萃取 :</span></span><br><span class="line">  <span class="comment">// NumericalBase的Scalar</span></span><br><span class="line">  <span class="comment">// SE3Base里面宏定义的那些类型</span></span><br><span class="line">  <span class="comment">// 缺了编译就报错</span></span><br><span class="line">  <span class="keyword">template</span>&lt;<span class="keyword">typename</span> _Scalar, <span class="type">int</span> _Options&gt;</span><br><span class="line">  <span class="keyword">struct</span> <span class="title class_">traits</span>&lt;SE3Tpl&lt;_Scalar, _Options&gt;&gt;</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="keyword">enum</span></span><br><span class="line">    &#123;</span><br><span class="line">      Options = _Options,</span><br><span class="line">      LINEAR = <span class="number">0</span>,</span><br><span class="line">      ANGULAR = <span class="number">3</span></span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="keyword">typedef</span> _Scalar Scalar;</span><br><span class="line">    <span class="keyword">typedef</span> Eigen::Matrix&lt;Scalar, <span class="number">3</span>, <span class="number">1</span>, Options&gt; Vector3;</span><br><span class="line">    <span class="keyword">typedef</span> Eigen::Matrix&lt;Scalar, <span class="number">4</span>, <span class="number">1</span>, Options&gt; Vector4;</span><br><span class="line">    <span class="keyword">typedef</span> Eigen::Matrix&lt;Scalar, <span class="number">6</span>, <span class="number">1</span>, Options&gt; Vector6;</span><br><span class="line">    <span class="keyword">typedef</span> Eigen::Matrix&lt;Scalar, <span class="number">3</span>, <span class="number">3</span>, Options&gt; Matrix3;</span><br><span class="line">    <span class="keyword">typedef</span> Eigen::Matrix&lt;Scalar, <span class="number">4</span>, <span class="number">4</span>, Options&gt; Matrix4;</span><br><span class="line">    <span class="keyword">typedef</span> Eigen::Matrix&lt;Scalar, <span class="number">6</span>, <span class="number">6</span>, Options&gt; Matrix6;</span><br><span class="line">    <span class="keyword">typedef</span> Matrix3 AngularType;</span><br><span class="line">    <span class="function"><span class="keyword">typedef</span> <span class="keyword">typename</span> <span class="title">PINOCCHIO_EIGEN_REF_TYPE</span><span class="params">(Matrix3)</span> AngularRef</span>;</span><br><span class="line">    <span class="function"><span class="keyword">typedef</span> <span class="keyword">typename</span> <span class="title">PINOCCHIO_EIGEN_REF_CONST_TYPE</span><span class="params">(Matrix3)</span> ConstAngularRef</span>;</span><br><span class="line">    <span class="keyword">typedef</span> Vector3 LinearType;</span><br><span class="line">    <span class="function"><span class="keyword">typedef</span> <span class="keyword">typename</span> <span class="title">PINOCCHIO_EIGEN_REF_TYPE</span><span class="params">(Vector3)</span> LinearRef</span>;</span><br><span class="line">    <span class="function"><span class="keyword">typedef</span> <span class="keyword">typename</span> <span class="title">PINOCCHIO_EIGEN_REF_CONST_TYPE</span><span class="params">(Vector3)</span> ConstLinearRef</span>;</span><br><span class="line">    <span class="keyword">typedef</span> Matrix6 ActionMatrixType;</span><br><span class="line">    <span class="keyword">typedef</span> Matrix4 HomogeneousMatrixType;</span><br><span class="line">    <span class="keyword">typedef</span> SE3Tpl&lt;Scalar, Options&gt; PlainType;</span><br><span class="line">  &#125;; <span class="comment">// traits SE3Tpl</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">template</span>&lt;<span class="keyword">typename</span> _Scalar, <span class="type">int</span> _Options&gt;</span><br><span class="line">  <span class="keyword">struct</span> <span class="title class_">SE3Tpl</span> : <span class="keyword">public</span> SE3Base&lt;SE3Tpl&lt;_Scalar, _Options&gt;&gt;</span><br><span class="line">  &#123;</span><br><span class="line">    <span class="comment">// 来自 eigen，重载 new /new [] /delete/delete []，保证字节对齐</span></span><br><span class="line">    <span class="comment">// 不管 new 多少次，内存永远对齐，永远全速 SIMD（一条指令算4次float运算）</span></span><br><span class="line">    <span class="function">EIGEN_MAKE_ALIGNED_OPERATOR_NEW</span></span><br><span class="line"><span class="function"></span></span><br><span class="line"><span class="function">    <span class="title">PINOCCHIO_SE3_TYPEDEF_TPL</span><span class="params">(SE3Tpl)</span></span>;</span><br><span class="line">    <span class="keyword">typedef</span> SE3Base&lt;SE3Tpl&lt;_Scalar, _Options&gt;&gt; Base;</span><br><span class="line">    <span class="keyword">typedef</span> Eigen::Quaternion&lt;Scalar, Options&gt; Quaternion;</span><br><span class="line">    <span class="keyword">typedef</span> <span class="keyword">typename</span> traits&lt;SE3Tpl&gt;::Vector3 Vector3;</span><br><span class="line">    <span class="keyword">typedef</span> <span class="keyword">typename</span> traits&lt;SE3Tpl&gt;::Matrix3 Matrix3;</span><br><span class="line">    <span class="keyword">typedef</span> <span class="keyword">typename</span> traits&lt;SE3Tpl&gt;::Matrix4 Matrix4;</span><br><span class="line">    <span class="keyword">typedef</span> <span class="keyword">typename</span> traits&lt;SE3Tpl&gt;::Vector4 Vector4;</span><br><span class="line">    <span class="keyword">typedef</span> <span class="keyword">typename</span> traits&lt;SE3Tpl&gt;::Matrix6 Matrix6;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 让子类继承并暴露父类的 rotation/translation 函数，使其可见、可调用、可被 IDE 识别</span></span><br><span class="line">    <span class="comment">// 套娃，父类的 rotation 函数其实调用的是子类的 rotation_impl</span></span><br><span class="line">    <span class="comment">// 接口在父类，子类负责实现</span></span><br><span class="line">    <span class="keyword">using</span> Base::rotation;</span><br><span class="line"></span><br><span class="line">    <span class="function">ConstAngularRef <span class="title">rotation_impl</span><span class="params">()</span> <span class="type">const</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">      <span class="keyword">return</span> rot;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function">AngularRef <span class="title">rotation_impl</span><span class="params">()</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">      <span class="keyword">return</span> rot;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="type">void</span> <span class="title">rotation_impl</span><span class="params">(<span class="type">const</span> AngularType &amp; R)</span></span></span><br><span class="line"><span class="function">    </span>&#123;</span><br><span class="line">      rot = R;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="CRTP模式核心要点"><a href="#CRTP模式核心要点" class="headerlink" title="CRTP模式核心要点"></a>CRTP模式核心要点</h1><ol>
+<li><p><strong>模板延迟实例化（惰性编译）</strong> —— 父类声明时引用 <code>traits&lt;Derived&gt;::Scalar</code>，此时类型尚未定义，但不会报错。只有当模板被实际实例化时，编译器才会检查类型是否存在。</p>
+</li>
+<li><p><strong>编译期类型检查</strong> —— 子类如果没有正确特化 <code>traits</code>，编译期直接报错，起到强制接口约束的作用。</p>
+</li>
+<li><p><strong>零运行时开销</strong> —— 没有虚函数表，没有虚函数调用开销，所有调用在编译期确定，性能等同于普通函数调用。</p>
+</li>
+<li><p><strong>套娃式继承</strong> —— 子类 <code>SE3Tpl</code> 继承自父类 <code>SE3Base&lt;SE3Tpl&gt;</code>，父类模板参数就是子类自己。</p>
+</li>
+<li><p><strong><code>derived()</code> 向下造型</strong> —— 父类通过 <code>static_cast</code> 将 <code>this</code> 指针转换为子类指针，从而调用子类的 <code>*_impl()</code> 实现函数。</p>
+</li>
+</ol>
+</article><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/C/">C++</a><a class="post-meta__tags" href="/tags/CRTP/">CRTP</a><a class="post-meta__tags" href="/tags/%E6%A8%A1%E6%9D%BF%E5%85%83%E7%BC%96%E7%A8%8B/">模板元编程</a><a class="post-meta__tags" href="/tags/Pinocchio/">Pinocchio</a></div><div class="post-share"><div class="social-share" data-image="/img/dog-icon.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2025/06/25/ZBC-%E9%AB%98%E5%88%9BHD%E6%8E%A7%E5%88%B6%E6%80%BB%E7%BB%93/" title="高创HD控制总结"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">高创HD控制总结</div></div><div class="info-2"><div class="info-item-1">高创HD控制原理及测试分析</div></div></div></a><a class="pagination-related" href="/2025/06/25/%E7%8A%B6%E6%80%81%E6%9C%BA%E3%80%81%E7%8A%B6%E6%80%81%E7%A9%BA%E9%97%B4%E6%96%B9%E7%A8%8B%E3%80%81%E4%BC%A0%E9%80%92%E5%87%BD%E6%95%B0%E7%9A%84%E8%81%94%E7%B3%BB/" title="状态机、状态空间方程、传递函数的联系"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">状态机、状态空间方程、传递函数的联系</div></div><div class="info-2"><div class="info-item-1">有限状态机、状态空间方程和传递函数的本质联系</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/12/20/ZBC-PIN%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" title="PIN源码阅读"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-20</div><div class="info-item-2">PIN源码阅读</div></div><div class="info-2"><div class="info-item-1">Pinocchio库exp3/exp6/log3源码解析</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/dog-icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">BeichenZhuo</div><div class="author-info-description">伺服&机器人技术笔记</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">42</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">95</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/BeichenZhuo"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#CRTP%E6%A8%A1%E5%BC%8F%E6%A6%82%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">CRTP模式概述</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9F%BA%E7%A1%80%E6%9E%B6%E6%9E%84"><span class="toc-number">2.</span> <span class="toc-text">基础架构</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#fwd-hpp-%E2%80%94%E2%80%94-%E7%B1%BB%E5%9E%8B%E8%90%83%E5%8F%96%E4%B8%8E%E5%9F%BA%E7%B1%BB%E5%AE%9A%E4%B9%89"><span class="toc-number">2.1.</span> <span class="toc-text">fwd.hpp —— 类型萃取与基类定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#se3-hpp-%E2%80%94%E2%80%94-%E5%85%A5%E5%8F%A3%E6%96%87%E4%BB%B6%E4%B8%8E%E5%AE%8F%E5%AE%9A%E4%B9%89"><span class="toc-number">2.2.</span> <span class="toc-text">se3.hpp —— 入口文件与宏定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#se3-base-hpp-%E2%80%94%E2%80%94-CRTP%E7%88%B6%E7%B1%BB%E6%8E%A5%E5%8F%A3%E5%AE%9A%E4%B9%89"><span class="toc-number">2.3.</span> <span class="toc-text">se3-base.hpp —— CRTP父类接口定义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#se3-tpl-hpp-%E2%80%94%E2%80%94-%E5%AD%90%E7%B1%BB%E5%AE%9E%E7%8E%B0"><span class="toc-number">2.4.</span> <span class="toc-text">se3-tpl.hpp —— 子类实现</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#CRTP%E6%A8%A1%E5%BC%8F%E6%A0%B8%E5%BF%83%E8%A6%81%E7%82%B9"><span class="toc-number">3.</span> <span class="toc-text">CRTP模式核心要点</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/07/25/ZBC-SimpleBGC%E6%BB%A4%E6%B3%A2%E5%99%A8%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" title="SimpleBGC滤波器源码阅读">SimpleBGC滤波器源码阅读</a><time datetime="2026-06-25T10:50:14.265Z" title="更新于 2026-06-25 18:50:14">2026-06-25</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/11/05/ZBC-%E6%9C%BA%E5%99%A8%E4%BA%BA%E4%BC%BA%E6%9C%8DPPI%E8%B0%83%E5%8F%82/" title="机器人伺服PPI调参">机器人伺服PPI调参</a><time datetime="2026-06-25T10:45:24.670Z" title="更新于 2026-06-25 18:45:24">2026-06-25</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/07/20/ZBC-PDFF%E4%BA%8C%E8%87%AA%E7%94%B1%E5%BA%A6PI/" title="PDFF——二自由度PI">PDFF——二自由度PI</a><time datetime="2026-06-25T09:58:46.812Z" title="更新于 2026-06-25 17:58:46">2026-06-25</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/06/25/ZBC-%E9%AB%98%E5%88%9BHD%E6%8E%A7%E5%88%B6%E6%80%BB%E7%BB%93/" title="高创HD控制总结">高创HD控制总结</a><time datetime="2026-06-25T09:42:42.806Z" title="更新于 2026-06-25 17:42:42">2026-06-25</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/06/25/ZBC-PINNOCIO%E5%BA%93CRTP/" title="PINNOCIO库CRTP（奇异模板递归）">PINNOCIO库CRTP（奇异模板递归）</a><time datetime="2026-06-25T09:32:42.136Z" title="更新于 2026-06-25 17:32:42">2026-06-25</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By BeichenZhuo</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.5</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.5"></script><script src="/js/main.js?v=5.5.5"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.1.2/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.5"></script></div></div></body></html>
