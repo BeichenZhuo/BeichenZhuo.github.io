@@ -1,0 +1,264 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>关节柔顺控制方案 | BeichenZhuo的Blog</title><meta name="author" content="BeichenZhuo"><meta name="copyright" content="BeichenZhuo"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="机器人关节阻抗&#x2F;导纳控制及SEA关节设计方案">
+<meta property="og:type" content="article">
+<meta property="og:title" content="关节柔顺控制方案">
+<meta property="og:url" content="https://beichenzhuo.github.io/2025/10/25/ZBC-%E5%85%B3%E8%8A%82%E6%9F%94%E9%A1%BA%E6%8E%A7%E5%88%B6%E6%96%B9%E6%A1%88/index.html">
+<meta property="og:site_name" content="BeichenZhuo的Blog">
+<meta property="og:description" content="机器人关节阻抗&#x2F;导纳控制及SEA关节设计方案">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://beichenzhuo.github.io/img/dog-icon.png">
+<meta property="article:published_time" content="2025-10-25T08:40:30.000Z">
+<meta property="article:modified_time" content="2026-06-25T00:13:47.926Z">
+<meta property="article:author" content="BeichenZhuo">
+<meta property="article:tag" content="SEA关节">
+<meta property="article:tag" content="柔顺控制">
+<meta property="article:tag" content="阻抗控制">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://beichenzhuo.github.io/img/dog-icon.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "关节柔顺控制方案",
+  "url": "https://beichenzhuo.github.io/2025/10/25/ZBC-%E5%85%B3%E8%8A%82%E6%9F%94%E9%A1%BA%E6%8E%A7%E5%88%B6%E6%96%B9%E6%A1%88/",
+  "image": "https://beichenzhuo.github.io/img/dog-icon.png",
+  "datePublished": "2025-10-25T08:40:30.000Z",
+  "dateModified": "2026-06-25T00:13:47.926Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "BeichenZhuo",
+      "url": "https://BeichenZhuo.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://beichenzhuo.github.io/2025/10/25/ZBC-%E5%85%B3%E8%8A%82%E6%9F%94%E9%A1%BA%E6%8E%A7%E5%88%B6%E6%96%B9%E6%A1%88/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.5"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '关节柔顺控制方案',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/custom.css"><meta name="generator" content="Hexo 8.1.2"></head><body><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">BeichenZhuo的Blog</span></a><a class="nav-page-title" href="/"><span class="site-name">关节柔顺控制方案</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"></div></nav><div id="post-info"><h1 class="post-title">关节柔顺控制方案</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-10-25T08:40:30.000Z" title="发表于 2025-10-25 16:40:30">2025-10-25</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-06-25T00:13:47.926Z" title="更新于 2026-06-25 08:13:47">2026-06-25</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="1-机器人控制特点"><a href="#1-机器人控制特点" class="headerlink" title="1. 机器人控制特点"></a>1. 机器人控制特点</h1><h2 id="1-1-物理人机交互（Physical-Human-Robot-Interaction-pHRI）"><a href="#1-1-物理人机交互（Physical-Human-Robot-Interaction-pHRI）" class="headerlink" title="1.1 物理人机交互（Physical Human-Robot Interaction, pHRI）"></a>1.1 物理人机交互（Physical Human-Robot Interaction, pHRI）</h2><p>pHRI是指人类与机器人在物理上直接接触或互动的过程。这种互动可以是通过直接的触摸、拖动、推动或通过其他方式进行的。</p>
+<p><img src="images/LpBxb3wH7os5Hcxeaz2cIcDwnvb.png" alt="Image Token: LpBxb3wH7os5Hcxeaz2cIcDwnvb"></p>
+<ul>
+<li><p>工业位置控制：环境刚度为0（不为0即产生碰撞），关注定位的极限性能，快速和准确。</p>
+</li>
+<li><p>机器人控制：环境刚度不断变化，需要将环境考虑在系统中，关注任意环境刚度下系统的稳定性和安全性。</p>
+</li>
+</ul>
+<p>pHRI的目标是使机器人能够在与人类的接触中进行安全、有效和自然的交互。其中核心概念有安全性、稳定性、自然交互、适应性。无源性控制是保证安全性和稳定性的重要解决手段。</p>
+<h2 id="1-2-无源性控制（Passivity-Based-Control-PBC）"><a href="#1-2-无源性控制（Passivity-Based-Control-PBC）" class="headerlink" title="1.2 无源性控制（Passivity-Based Control, PBC）"></a>1.2 无源性控制（Passivity-Based Control, PBC）</h2><p>无源性指的是系统无法生成超过其输入的能量。在控制理论中，如果一个系统的能量不会增加或仅仅维持在一个稳定水平，则该系统被称为无源的。这种特性可以帮助确保系统的稳定性。</p>
+<p>无源=&gt;稳定，稳定≠&gt;无源</p>
+<p>Colgate 和 Hogan 的定理针对机械系统（如机器人）与环境接触时的稳定性问题，给出了系统在接触<strong>所有被动环境</strong>时保持稳定的充要条件。定理的核心结论是：<br><strong>系统稳定当且仅当交互阻抗 Z(s)=F(s)V(s) 满足：</strong></p>
+<ol>
+<li><p><strong>Z(s)在右半平面（RHP）无极点（即 Z(s) 稳定）</strong></p>
+</li>
+<li><p><strong>对所有频率 ω，满足 Re⁡[Z(jω)]≥0（即 Z(s) 无源）</strong></p>
+</li>
+</ol>
+<p>PD控制器是一种无源控制器，很容易证明其稳定性，但如果比例增益不高，则稳态误差会很大。由于噪声以及系统控制器的采样率限制，增益不能无限制地提高。而 PID  控制器则允许在不使用高增益的情况下获得更好的低频特性，但对于不同刚性的环境不保证稳定性。</p>
+<h1 id="2-阻抗控制"><a href="#2-阻抗控制" class="headerlink" title="2. 阻抗控制"></a>2. 阻抗控制</h1><p>下发转矩指令，力矩闭环PD控制，套在电流环外。力矩指令通过转矩系数转化为电流，前馈给电流环。驱动器使用CST模式。</p>
+<p><img src="images/UT48bYrM4oCdTFxmtrAcRh1ynUd.png" alt="Image Token: UT48bYrM4oCdTFxmtrAcRh1ynUd"></p>
+<h1 id="3-导纳控制"><a href="#3-导纳控制" class="headerlink" title="3. 导纳控制"></a>3. 导纳控制</h1><p>下发位置指令，并且加入速度，加速度前馈。驱动器使用CSP模式。</p>
+<p><img src="images/BPSjb2ftjoVJLixknR0cvvQUnrh.png" alt="Image Token: BPSjb2ftjoVJLixknR0cvvQUnrh"></p>
+<h1 id="4-SEA关节"><a href="#4-SEA关节" class="headerlink" title="4. SEA关节"></a>4. SEA关节</h1><p>弹性将力控问题转化为位置控制问题，从而极大地提高了力的准确性。由于输出力与弹簧的扭曲成比例，所以电机的位置决定了力的大小。由于通过齿轮系控制位置比控制力更容易，因此摩擦、间隙和扭矩波纹的影响得以减少。</p>
+<p>控制作用会降低反射惯量，并且弹性起着低通滤波器的作用，过滤冲击负载，保护齿轮箱免受损坏。弹簧还会滤除执行器的输出，限制可实现的带宽。正如上文所讨论的，低带宽控制对于组装等类人任务已足够。</p>
+<p>低频时效果优于刚性关节，高频时效果优于弹簧。</p>
+</article><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E9%98%BB%E6%8A%97%E6%8E%A7%E5%88%B6/">阻抗控制</a><a class="post-meta__tags" href="/tags/%E6%9F%94%E9%A1%BA%E6%8E%A7%E5%88%B6/">柔顺控制</a><a class="post-meta__tags" href="/tags/SEA%E5%85%B3%E8%8A%82/">SEA关节</a></div><div class="post-share"><div class="social-share" data-image="/img/dog-icon.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2025/11/05/ZBC-%E6%9C%BA%E5%99%A8%E4%BA%BA%E4%BC%BA%E6%9C%8DPPI%E8%B0%83%E5%8F%82/" title="机器人伺服PPI调参"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">机器人伺服PPI调参</div></div><div class="info-2"><div class="info-item-1">机器人伺服三环控制及PPI参数整定方法</div></div></div></a><a class="pagination-related" href="/2025/10/12/ZBC-PPI%E5%8F%82%E6%95%B0%E5%AE%9E%E9%AA%8C%E7%BB%93%E6%9E%9C/" title="PPI参数实验结果"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">PPI参数实验结果</div></div><div class="info-2"><div class="info-item-1">伺服PPI参数实验结果及影响分析</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/07/28/ZBC-%E6%9C%BA%E6%A2%B0%E6%8C%AF%E5%8A%A8/" title="机械振动"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-07-28</div><div class="info-item-2">机械振动</div></div><div class="info-2"><div class="info-item-1">机械振动阻抗表示及最优控制方法</div></div></div></a><a class="pagination-related" href="/2025/10/03/ZBC-%E6%9C%BA%E5%99%A8%E4%BA%BA%E4%B8%8A%E8%82%A2%E5%85%B3%E8%8A%82%E9%98%BB%E6%8A%97%E6%8E%A7%E5%88%B6(%E6%9C%80%E6%97%A9)/" title="机器人上肢关节阻抗控制(最早)"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-10-03</div><div class="info-item-2">机器人上肢关节阻抗控制(最早)</div></div><div class="info-2"><div class="info-item-1">二阶系统、机器人动力学及关节阻抗控制方案</div></div></div></a><a class="pagination-related" href="/2025/07/05/ZBC-%E5%B7%A5%E4%B8%9A%E5%8D%8F%E4%BD%9C%E6%A8%A1%E5%9E%8B%E5%AF%B9%E6%AF%94/" title="工业协作模型对比"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-07-05</div><div class="info-item-2">工业协作模型对比</div></div><div class="info-2"><div class="info-item-1">工业机器人与协作机器人控制模型对比分析</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/dog-icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">BeichenZhuo</div><div class="author-info-description">伺服&机器人技术笔记</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">37</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">83</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/BeichenZhuo"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E6%9C%BA%E5%99%A8%E4%BA%BA%E6%8E%A7%E5%88%B6%E7%89%B9%E7%82%B9"><span class="toc-number">1.</span> <span class="toc-text">1. 机器人控制特点</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E7%89%A9%E7%90%86%E4%BA%BA%E6%9C%BA%E4%BA%A4%E4%BA%92%EF%BC%88Physical-Human-Robot-Interaction-pHRI%EF%BC%89"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 物理人机交互（Physical Human-Robot Interaction, pHRI）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E6%97%A0%E6%BA%90%E6%80%A7%E6%8E%A7%E5%88%B6%EF%BC%88Passivity-Based-Control-PBC%EF%BC%89"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 无源性控制（Passivity-Based Control, PBC）</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E9%98%BB%E6%8A%97%E6%8E%A7%E5%88%B6"><span class="toc-number">2.</span> <span class="toc-text">2. 阻抗控制</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E5%AF%BC%E7%BA%B3%E6%8E%A7%E5%88%B6"><span class="toc-number">3.</span> <span class="toc-text">3. 导纳控制</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-SEA%E5%85%B3%E8%8A%82"><span class="toc-number">4.</span> <span class="toc-text">4. SEA关节</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/18/%E6%9C%BA%E5%99%A8%E4%BA%BA%E5%85%B3%E8%8A%82%E6%A8%A1%E7%BB%84%E4%B8%8A%E4%BD%8D%E6%9C%BAAPI%E8%B0%83%E7%A0%94/" title="机器人关节模组上位机API调研">机器人关节模组上位机API调研</a><time datetime="2026-03-18T02:25:15.000Z" title="发表于 2026-03-18 10:25:15">2026-03-18</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/02/10/%E6%9C%BA%E5%99%A8%E4%BA%BA%E5%85%B3%E8%8A%82%E6%8E%A7%E5%88%B6/" title="机器人关节控制">机器人关节控制</a><time datetime="2026-02-10T09:31:12.000Z" title="发表于 2026-02-10 17:31:12">2026-02-10</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/02/10/%E8%BD%AC%E7%9F%A9%E9%97%AD%E7%8E%AF/" title="转矩闭环">转矩闭环</a><time datetime="2026-02-10T09:31:12.000Z" title="发表于 2026-02-10 17:31:12">2026-02-10</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/01/15/ZBC-EOE%E5%8A%9F%E8%83%BD%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/" title="EOE功能使用方法">EOE功能使用方法</a><time datetime="2026-01-15T02:15:30.000Z" title="发表于 2026-01-15 10:15:30">2026-01-15</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/12/20/ZBC-PIN%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" title="PIN源码阅读">PIN源码阅读</a><time datetime="2025-12-20T03:00:00.000Z" title="发表于 2025-12-20 11:00:00">2025-12-20</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By BeichenZhuo</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.5</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.5"></script><script src="/js/main.js?v=5.5.5"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.1.2/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

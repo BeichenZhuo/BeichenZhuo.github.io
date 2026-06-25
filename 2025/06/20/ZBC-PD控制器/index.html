@@ -1,0 +1,292 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>PD控制器 | BeichenZhuo的Blog</title><meta name="author" content="BeichenZhuo"><meta name="copyright" content="BeichenZhuo"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="PD控制器原理及前馈对系统性能的影响">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PD控制器">
+<meta property="og:url" content="https://beichenzhuo.github.io/2025/06/20/ZBC-PD%E6%8E%A7%E5%88%B6%E5%99%A8/index.html">
+<meta property="og:site_name" content="BeichenZhuo的Blog">
+<meta property="og:description" content="PD控制器原理及前馈对系统性能的影响">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://beichenzhuo.github.io/img/dog-icon.png">
+<meta property="article:published_time" content="2025-06-20T03:00:30.000Z">
+<meta property="article:modified_time" content="2026-06-25T00:38:43.321Z">
+<meta property="article:author" content="BeichenZhuo">
+<meta property="article:tag" content="PD控制">
+<meta property="article:tag" content="位置控制">
+<meta property="article:tag" content="前馈控制">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://beichenzhuo.github.io/img/dog-icon.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "PD控制器",
+  "url": "https://beichenzhuo.github.io/2025/06/20/ZBC-PD%E6%8E%A7%E5%88%B6%E5%99%A8/",
+  "image": "https://beichenzhuo.github.io/img/dog-icon.png",
+  "datePublished": "2025-06-20T03:00:30.000Z",
+  "dateModified": "2026-06-25T00:38:43.321Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "BeichenZhuo",
+      "url": "https://BeichenZhuo.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://beichenzhuo.github.io/2025/06/20/ZBC-PD%E6%8E%A7%E5%88%B6%E5%99%A8/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.5"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'PD控制器',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/custom.css"><meta name="generator" content="Hexo 8.1.2"></head><body><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">BeichenZhuo的Blog</span></a><a class="nav-page-title" href="/"><span class="site-name">PD控制器</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"></div></nav><div id="post-info"><h1 class="post-title">PD控制器</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-06-20T03:00:30.000Z" title="发表于 2025-06-20 11:00:30">2025-06-20</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-06-25T00:38:43.321Z" title="更新于 2026-06-25 08:38:43">2026-06-25</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="控制率"><a href="#控制率" class="headerlink" title="控制率"></a>控制率</h1><p>PD控制器控制率如下：</p>
+<script type="math/tex; mode=display">\tau=k_p(p_{d}-p)+k_d(\omega_{d}-\omega)+\tau_f</script><p>其中：</p>
+<p>$k_p$:位置刚度</p>
+<p>$k_d$:速度刚度</p>
+<p>$p_d$:期望位置</p>
+<p>$\omega_d$:期望速度</p>
+<p>$\tau_f$:前馈力矩</p>
+<p>以被控对象为最简单的<script type="math/tex">\frac{1}{Js}</script>为例（<script type="math/tex">J</script>为负载惯量），控制框图如下：</p>
+<p><img src="images/SGtbb72NJowBn0xkaxScC66XnY2.png" alt="Image Token: SGtbb72NJowBn0xkaxScC66XnY2"></p>
+<h1 id="普通位置模式"><a href="#普通位置模式" class="headerlink" title="普通位置模式"></a>普通位置模式</h1><p>位置模式下只有位置指令，<script type="math/tex">\tau_f=0,\omega_{d}=0</script></p>
+<p>整理后传递函数为标准二阶系统：</p>
+<script type="math/tex; mode=display">\frac{k_p}{Js^2+k_ds+k_p}</script><script type="math/tex; mode=display">\omega_n=\sqrt{\frac{k_p}{J} }，\zeta=\frac{k_d}{2\sqrt{Jk_p}}</script><p>其中<script type="math/tex">\omega_n</script>为带宽，控制系统响应；<script type="math/tex">\zeta</script>控制超调量。</p>
+<p>根据以上公式，可以大概整定出一套较为合适的增益参数。</p>
+<h2 id="Kp"><a href="#Kp" class="headerlink" title="Kp"></a>Kp</h2><p>参数<script type="math/tex">k_p</script>主要控制系统响应性能，频域上主要与带宽<script type="math/tex">\omega_n</script>相关，时域上与阶跃响应上升时间相关。</p>
+<p>阶跃响应如下：</p>
+<p><img src="images/PjC9bgehgoJc63x05rhcdMiRn52.png" alt="Image Token: PjC9bgehgoJc63x05rhcdMiRn52"></p>
+<p>频域bode图如下：</p>
+<p><img src="images/LK5ubvwIComKh0xHNsjcleqFnOc.png" alt="Image Token: LK5ubvwIComKh0xHNsjcleqFnOc"></p>
+<h2 id="Kd"><a href="#Kd" class="headerlink" title="Kd"></a>Kd</h2><p>参数<script type="math/tex">k_d</script>主要控制系统阻尼，频域上主要与带宽<script type="math/tex">\omega_n</script>附近突峰相关，时域上与超调震荡情况相关。</p>
+<p>阶跃响应如下：</p>
+<p><img src="images/PKVNb62TzomC0MxBB3DcqaYwnwc.png" alt="Image Token: PKVNb62TzomC0MxBB3DcqaYwnwc"></p>
+<p>频域bode图如下：</p>
+<p><img src="images/Fm3Ub8b0Wopy2TxfRACcnolInic.png" alt="Image Token: Fm3Ub8b0Wopy2TxfRACcnolInic"></p>
+<h2 id="J"><a href="#J" class="headerlink" title="J"></a>J</h2><p>参数<script type="math/tex">J</script>为负载惯量，在相同参数下，负载惯量变大可能会引起震荡和响应变慢</p>
+<p>阶跃响应如下：</p>
+<p><img src="images/HPc0bWnVUoVH7OxYrOec1zbGnyd.png" alt="Image Token: HPc0bWnVUoVH7OxYrOec1zbGnyd"></p>
+<p>频域bode图如下：</p>
+<p><img src="images/WFgAbliCboP9NnxvwVIc5axxn8c.png" alt="Image Token: WFgAbliCboP9NnxvwVIc5axxn8c"></p>
+<h1 id="前馈对系统的影响"><a href="#前馈对系统的影响" class="headerlink" title="前馈对系统的影响"></a>前馈对系统的影响</h1><p>前馈<script type="math/tex">\tau_f,\omega_{d}</script>不为0时同样会对位置响应造成影响，可以通过控制框图推得传递函数。</p>
+<p>从目标位置<script type="math/tex">p_d</script>到实际位置的传函为：</p>
+<script type="math/tex; mode=display">\frac{k_p}{Js^2+k_ds+k_p}</script><p>从目标速度<script type="math/tex">\omega_d</script>到实际位置的传函为：</p>
+<script type="math/tex; mode=display">\frac{k_d}{Js^2+k_ds+k_p}</script><p>从前馈力矩<script type="math/tex">\tau_f</script>到实际位置的传函为：</p>
+<script type="math/tex; mode=display">\frac{1}{Js^2+k_ds+k_p}</script><p>如果令目标速度<script type="math/tex">\omega_d=p_ds</script>，即位置的微分</p>
+<p>令前馈力矩<script type="math/tex">\tau_f=Jp_ds^2</script>，即加速度和负载转矩的积</p>
+<p>那么系统传函将会由<script type="math/tex">\frac{k_p}{Js^2+k_ds+k_p}</script>变为：</p>
+<script type="math/tex; mode=display">\frac{k_p}{Js^2+k_ds+k_p}+\frac{k_d}{Js^2+k_ds+k_p}s+\frac{1}{Js^2+k_ds+k_p}Js^2 =1</script><p>这是最理想的状况，频域bode图如下（其中转矩前馈没有完全补偿，若完全补偿则变为一条幅值0dB，相位0deg的直线）：</p>
+<p><img src="images/HUiFbLEA7ojA04xEtlzcPxyDn8c.png" alt="Image Token: HUiFbLEA7ojA04xEtlzcPxyDn8c"></p>
+<p>速度前馈能够提高系统中高频响应，但会带来中频突峰，时域上表现为响应变快，可能有超调。</p>
+<p><img src="images/HDI6bXsYooz3syxPVNccGXcCnKc.png" alt="Image Token: HDI6bXsYooz3syxPVNccGXcCnKc"></p>
+<p>加速度前馈能够提高系统高频响应，同时压制速度前馈中频突峰，但由于多次微分可能会引入高频噪声。</p>
+<h2 id="带前馈的位置模式"><a href="#带前馈的位置模式" class="headerlink" title="带前馈的位置模式"></a>带前馈的位置模式</h2><p>在普通位置模式达不到响应要求的前提下，可以计算指令速度作为前馈加入到系统中，可以提高系统响应能力。</p>
+<h1 id="现实电机负载系统"><a href="#现实电机负载系统" class="headerlink" title="现实电机负载系统"></a>现实电机负载系统</h1><p>以上都是建立在被控对象为最简单的<script type="math/tex">\frac{1}{Js}</script>得到的结论，然而实际上有很多其他不理想情况。</p>
+<ol>
+<li><p>负载变化，负载变化会引起<script type="math/tex">J</script>发生变化。导致系统带宽、阻尼发生变化。</p>
+</li>
+<li><p>摩擦力，诸如静摩擦，粘滞摩擦等。由于控制器没有积分环节，摩擦力会导致位置静差。</p>
+</li>
+</ol>
+<p>下图为自研电机实测由于静摩擦力在低速时跟随效果不好。</p>
+<p><img src="images/NjiPbGImLoG7DixkHwac4yg1nQg.png" alt="Image Token: NjiPbGImLoG7DixkHwac4yg1nQg"></p>
+<ul>
+<li>周期性扰动。诸如齿槽转矩波动，机械传动等都会由负载转矩引入，体现在转矩与速度波动上。</li>
+</ul>
+<p>如果要求比较高，需要对以上扰动进行补偿。</p>
+</article><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/PD%E6%8E%A7%E5%88%B6/">PD控制</a><a class="post-meta__tags" href="/tags/%E4%BD%8D%E7%BD%AE%E6%8E%A7%E5%88%B6/">位置控制</a><a class="post-meta__tags" href="/tags/%E5%89%8D%E9%A6%88%E6%8E%A7%E5%88%B6/">前馈控制</a></div><div class="post-share"><div class="social-share" data-image="/img/dog-icon.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2025/06/20/ZBC-%E5%8D%8F%E4%BD%9C%E8%87%82%E4%BC%BA%E6%9C%8D%E5%9B%9B%E7%8E%AF%E6%8E%A7%E5%88%B6/" title="协作臂伺服四环控制"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">协作臂伺服四环控制</div></div><div class="info-2"><div class="info-item-1">协作臂伺服四环控制架构及阻抗模式分析</div></div></div></a><a class="pagination-related" href="/2025/06/08/ZBC-Kalman%E6%BB%A4%E6%B3%A2%E5%8F%8Aimu%E4%B8%8E%E6%B7%B1%E5%BA%A6%E7%9B%B8%E6%9C%BA%E8%9E%8D%E5%90%88/" title="Kalman滤波及imu与深度相机融合"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">Kalman滤波及imu与深度相机融合</div></div><div class="info-2"><div class="info-item-1">卡尔曼滤波原理、协方差矩阵及传感器融合算法</div></div></div></a></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/dog-icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">BeichenZhuo</div><div class="author-info-description">伺服&机器人技术笔记</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">37</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">83</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/BeichenZhuo"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%8E%A7%E5%88%B6%E7%8E%87"><span class="toc-number">1.</span> <span class="toc-text">控制率</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%99%AE%E9%80%9A%E4%BD%8D%E7%BD%AE%E6%A8%A1%E5%BC%8F"><span class="toc-number">2.</span> <span class="toc-text">普通位置模式</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Kp"><span class="toc-number">2.1.</span> <span class="toc-text">Kp</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Kd"><span class="toc-number">2.2.</span> <span class="toc-text">Kd</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#J"><span class="toc-number">2.3.</span> <span class="toc-text">J</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%89%8D%E9%A6%88%E5%AF%B9%E7%B3%BB%E7%BB%9F%E7%9A%84%E5%BD%B1%E5%93%8D"><span class="toc-number">3.</span> <span class="toc-text">前馈对系统的影响</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B8%A6%E5%89%8D%E9%A6%88%E7%9A%84%E4%BD%8D%E7%BD%AE%E6%A8%A1%E5%BC%8F"><span class="toc-number">3.1.</span> <span class="toc-text">带前馈的位置模式</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E7%8E%B0%E5%AE%9E%E7%94%B5%E6%9C%BA%E8%B4%9F%E8%BD%BD%E7%B3%BB%E7%BB%9F"><span class="toc-number">4.</span> <span class="toc-text">现实电机负载系统</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/18/%E6%9C%BA%E5%99%A8%E4%BA%BA%E5%85%B3%E8%8A%82%E6%A8%A1%E7%BB%84%E4%B8%8A%E4%BD%8D%E6%9C%BAAPI%E8%B0%83%E7%A0%94/" title="机器人关节模组上位机API调研">机器人关节模组上位机API调研</a><time datetime="2026-03-18T02:25:15.000Z" title="发表于 2026-03-18 10:25:15">2026-03-18</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/02/10/%E6%9C%BA%E5%99%A8%E4%BA%BA%E5%85%B3%E8%8A%82%E6%8E%A7%E5%88%B6/" title="机器人关节控制">机器人关节控制</a><time datetime="2026-02-10T09:31:12.000Z" title="发表于 2026-02-10 17:31:12">2026-02-10</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/02/10/%E8%BD%AC%E7%9F%A9%E9%97%AD%E7%8E%AF/" title="转矩闭环">转矩闭环</a><time datetime="2026-02-10T09:31:12.000Z" title="发表于 2026-02-10 17:31:12">2026-02-10</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/01/15/ZBC-EOE%E5%8A%9F%E8%83%BD%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/" title="EOE功能使用方法">EOE功能使用方法</a><time datetime="2026-01-15T02:15:30.000Z" title="发表于 2026-01-15 10:15:30">2026-01-15</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/12/20/ZBC-PIN%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" title="PIN源码阅读">PIN源码阅读</a><time datetime="2025-12-20T03:00:00.000Z" title="发表于 2025-12-20 11:00:00">2025-12-20</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By BeichenZhuo</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.5</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.5"></script><script src="/js/main.js?v=5.5.5"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.1.2/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

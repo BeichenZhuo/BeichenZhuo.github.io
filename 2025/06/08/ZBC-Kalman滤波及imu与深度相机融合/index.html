@@ -1,0 +1,484 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Kalman滤波及imu与深度相机融合 | BeichenZhuo的Blog</title><meta name="author" content="BeichenZhuo"><meta name="copyright" content="BeichenZhuo"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="卡尔曼滤波原理、协方差矩阵及传感器融合算法">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Kalman滤波及imu与深度相机融合">
+<meta property="og:url" content="https://beichenzhuo.github.io/2025/06/08/ZBC-Kalman%E6%BB%A4%E6%B3%A2%E5%8F%8Aimu%E4%B8%8E%E6%B7%B1%E5%BA%A6%E7%9B%B8%E6%9C%BA%E8%9E%8D%E5%90%88/index.html">
+<meta property="og:site_name" content="BeichenZhuo的Blog">
+<meta property="og:description" content="卡尔曼滤波原理、协方差矩阵及传感器融合算法">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://beichenzhuo.github.io/img/dog-icon.png">
+<meta property="article:published_time" content="2025-06-08T08:45:12.000Z">
+<meta property="article:modified_time" content="2026-06-25T00:21:13.096Z">
+<meta property="article:author" content="BeichenZhuo">
+<meta property="article:tag" content="IMU">
+<meta property="article:tag" content="传感器融合">
+<meta property="article:tag" content="卡尔曼滤波">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://beichenzhuo.github.io/img/dog-icon.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Kalman滤波及imu与深度相机融合",
+  "url": "https://beichenzhuo.github.io/2025/06/08/ZBC-Kalman%E6%BB%A4%E6%B3%A2%E5%8F%8Aimu%E4%B8%8E%E6%B7%B1%E5%BA%A6%E7%9B%B8%E6%9C%BA%E8%9E%8D%E5%90%88/",
+  "image": "https://beichenzhuo.github.io/img/dog-icon.png",
+  "datePublished": "2025-06-08T08:45:12.000Z",
+  "dateModified": "2026-06-25T00:21:13.096Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "BeichenZhuo",
+      "url": "https://BeichenZhuo.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://beichenzhuo.github.io/2025/06/08/ZBC-Kalman%E6%BB%A4%E6%B3%A2%E5%8F%8Aimu%E4%B8%8E%E6%B7%B1%E5%BA%A6%E7%9B%B8%E6%9C%BA%E8%9E%8D%E5%90%88/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.5"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Kalman滤波及imu与深度相机融合',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/custom.css"><meta name="generator" content="Hexo 8.1.2"></head><body><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">BeichenZhuo的Blog</span></a><a class="nav-page-title" href="/"><span class="site-name">Kalman滤波及imu与深度相机融合</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"></div></nav><div id="post-info"><h1 class="post-title">Kalman滤波及imu与深度相机融合</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-06-08T08:45:12.000Z" title="发表于 2025-06-08 16:45:12">2025-06-08</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-06-25T00:21:13.096Z" title="更新于 2026-06-25 08:21:13">2026-06-25</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="1-随机变量"><a href="#1-随机变量" class="headerlink" title="1. 随机变量"></a>1. 随机变量</h1><p>随机变量是一个集合，包含对应的随机试验所有可能的结果取值</p>
+<p><em>k</em> 阶原点矩，是随机变量 <em>k</em> 次幂的期望： <script type="math/tex">E(X^k)</script></p>
+<p><em>k</em> 阶中心距，是随机变量关于均值的散布的 <em>k</em> 次幂的期望： <script type="math/tex">E((X-\mu_X)^k)</script></p>
+<p>一阶原点矩：<script type="math/tex">E(X)</script>-测量结果的均值</p>
+<p>二阶中心距：<script type="math/tex">E((X-\mu_X)^2)</script>-测量结果的方差</p>
+<h3 id="1-1-基本期望代数运算法则"><a href="#1-1-基本期望代数运算法则" class="headerlink" title="1.1 基本期望代数运算法则"></a>1.1 基本期望代数运算法则</h3><script type="math/tex; mode=display">E(X)=\mu_X=\sum {xp(x)}</script><script type="math/tex; mode=display">E(a)=a</script><script type="math/tex; mode=display">E(aX)=aE(X)</script><script type="math/tex; mode=display">E(a\pm bX)=a\pm bE(X)</script><script type="math/tex; mode=display">E(X \pm Y)=E(X)\pm E(Y)</script><script type="math/tex; mode=display">E(XY)=E(X)E(Y)$$=>X Y相互独立
+
+### 1.2 方差和协方差的期望的代数运算法则
+
+$$V(a)=0</script><script type="math/tex; mode=display">V(a\pm X)=V(X)</script><script type="math/tex; mode=display">V(X)=E(X^2)-\mu_X^2</script><script type="math/tex; mode=display">COV(X,Y)=E(XY)-\mu_X\mu_Y</script><script type="math/tex; mode=display">COV(X,Y)=0$$(如果X Y相互独立)
+
+$$V(aX)=a^2V(X)</script><script type="math/tex; mode=display">V(X \pm Y)=V(X)+V(Y)\pm 2COV(X,Y)</script><script type="math/tex; mode=display">V(XY)\ne V(X)V(Y)</script><p>对于N个给定的X和Y的总体：</p>
+<script type="math/tex; mode=display">COV(X,Y)=\frac{1}{N}\sum^{N}_{i=1}{(x_i-\mu_x)(y_i-\mu_y)}=\frac{1}{N}\sum^{N}_{i=1}{(x_i y_i)}-\mu_x \mu_y</script><p>对于N个样本估计总体：</p>
+<script type="math/tex; mode=display">COV(X,Y)=\frac{1}{N-1}\sum^{N}_{i=1}{(x_i-\mu_x)(y_i-\mu_y)}</script><h3 id="1-3-协方差矩阵"><a href="#1-3-协方差矩阵" class="headerlink" title="1.3 协方差矩阵"></a>1.3 协方差矩阵</h3><p>协方差矩阵，对于一个二维随机变量：</p>
+<script type="math/tex; mode=display">\Sigma=\begin{bmatrix}
+  \sigma_{xx} & \sigma_{xy}\\
+  \sigma_{yx} & \sigma_{yy}
+\end{bmatrix}=
+\begin{bmatrix}
+  VAR(x) & COV(x,y)\\
+  COV(y,x) & VAR(y)
+\end{bmatrix}</script><p>对于n维随机变量，协方差矩阵为：</p>
+<script type="math/tex; mode=display">\Sigma=\begin{bmatrix}
+\sigma^2_1  & \sigma_{12} & \dots & \sigma_{1n}\\
+\sigma_{21}  & \sigma^2_2 & \dots & \sigma_{2n}\\
+\vdots & \vdots & \ddots & \vdots\\
+\sigma_{n1}  & \sigma_{n2} & \dots & \sigma^2_n\\
+\end{bmatrix}</script><h4 id="1-3-1-性质"><a href="#1-3-1-性质" class="headerlink" title="1.3.1 性质"></a>1.3.1 性质</h4><ol>
+<li>协方差矩阵的对角元素即为每个多维随机变量分量的方差：</li>
+</ol>
+<script type="math/tex; mode=display">\Sigma_{ii}=\sigma_i^2</script><ul>
+<li>由于对角元素非负，协方差矩阵的迹（对角元素之和）也非负：</li>
+</ul>
+<script type="math/tex; mode=display">tr(\Sigma)=\sum_{i=1}^{n}{\sigma_{ii}}\gt0</script><ul>
+<li>因为 <script type="math/tex">\Sigma_{ij}=\sigma_{ij}=\sigma_{ji}=\Sigma_{ji}</script>, 协方差矩阵是对称阵：&#x20;</li>
+</ul>
+<script type="math/tex; mode=display">\Sigma=\Sigma^T</script><ul>
+<li>协方差矩阵是半正定矩阵：</li>
+</ul>
+<p>如果对于任何向量 <strong><em>v</em></strong>≠0，都有 <strong>*v</strong>T<strong>Av*</strong>≥0，则矩阵 <strong><em>A</em></strong> 称为半正定矩阵<br><strong><em>A</em></strong> 的特征值均为非负。    &#x20;</p>
+<h4 id="1-3-2-期望"><a href="#1-3-2-期望" class="headerlink" title="1.3.2 期望"></a>1.3.2 期望</h4><script type="math/tex; mode=display">COV(x)=E((x-\mu_x)(x-\mu_x)^T)</script><h3 id="1-4-多变量正态分布"><a href="#1-4-多变量正态分布" class="headerlink" title="1.4 多变量正态分布"></a>1.4 多变量正态分布</h3><p>单变量正态分布 <script type="math/tex">\mathcal{N}\left(\mu, \sigma^{2}\right)</script>：</p>
+<script type="math/tex; mode=display">p(x \mid \mu, \sigma)=\frac{1}{\sqrt{2 \pi \sigma^{2}}} \exp \left(-\frac{(x-\mu)^{2}}{2 \sigma^{2}}\right)</script><p>n维多变量正态分布记为：</p>
+<script type="math/tex; mode=display">p(\boldsymbol{x} \mid \boldsymbol{\mu}, \mathbf{\Sigma})=\frac{1}{\sqrt{(2 \pi)^{n}|\mathbf{\Sigma}|}} \exp \left(-\frac{1}{2}(\boldsymbol{x}-\boldsymbol{\mu})^{T} \mathbf{\Sigma}^{-1}(\boldsymbol{x}-\boldsymbol{\mu})\right)</script><h3 id="1-5-置信区间"><a href="#1-5-置信区间" class="headerlink" title="1.5 置信区间"></a>1.5 置信区间</h3><p><img src="images/YwT4bkk6Non3t2xNigvcnEnfn3f.png" alt="Image Token: YwT4bkk6Non3t2xNigvcnEnfn3f"></p>
+<p>双变量正态分布的概率密度函数以一个二维高斯函数的围成体积来描述</p>
+<p>例如，二维高斯函数在 1<em>σ</em>对应的水平切片内部围成的体积是围成总体积的39.35%</p>
+<h3 id="1-6-置信椭圆"><a href="#1-6-置信椭圆" class="headerlink" title="1.6 置信椭圆"></a>1.6 置信椭圆</h3><p>二维高斯函数的水平切片向下下投影形状为一个椭圆</p>
+<p><img src="images/HVp3b7Ow6o29DsxdZQLc9zmKnAh.png" alt="Image Token: HVp3b7Ow6o29DsxdZQLc9zmKnAh"></p>
+<p>协方差椭圆是高斯分布的一条特殊等高线，使我们能以二维形式展示 1<em>σ</em> 置信区间，从而从几何角度直观解释协方差矩阵。</p>
+<p>任何椭圆可以由四个参数描述：</p>
+<ul>
+<li><p>椭圆心 <script type="math/tex">\mu_x,\mu_y</script></p>
+</li>
+<li><p>半长轴 <script type="math/tex">a</script></p>
+</li>
+<li><p>半短轴 <script type="math/tex">b</script></p>
+</li>
+<li><p>朝向角 <script type="math/tex">\theta</script></p>
+<p><img src="images/GnJ7b9izyopcxuxWuYDc3NuBnoh.png" alt="Image Token: GnJ7b9izyopcxuxWuYDc3NuBnoh"></p>
+</li>
+</ul>
+<p>椭圆心是随机变量的均值：</p>
+<script type="math/tex; mode=display">\mu_x=\frac{1}{N}\sum^{N}_{i=1}x_i</script><script type="math/tex; mode=display">\mu_y=\frac{1}{N}\sum^{N}_{i=1}y_i</script><p>椭圆半长轴和半短轴长度是对应随机变量协方差矩阵的特征值的平方根：&#x20;</p>
+<p>半长轴长度<script type="math/tex">a</script>是最大的特征值平方根</p>
+<p>半短轴长度<script type="math/tex">b</script>是第二大的特征值的平方根</p>
+<p>椭圆的朝向由随机变量协方差矩阵的特征向量给出：</p>
+<script type="math/tex; mode=display">\theta=arctan(\frac{v_x}{v_y})</script><p>式中：</p>
+<script type="math/tex; mode=display">v_x$$ 是协方差矩阵对应最大特征值的特征向量的 $$x$$分量
+
+$$v_y$$*&#x20;*&#x662F;协方差矩阵对应最大特征值的特征向量的 $$y$$分量
+
+在许多应用场景里，人们希望找到某个特定概率在概率密度函数上对应的边界。例如对95%的概率，我们希望找到一条边界，使其围成的体积为整个二维高斯函数围成体积的95%
+
+这个边界投影到 *x*−*y* 平面上就是置信椭圆（置信椭圆一定是一条二维高斯函数的等高线）
+
+我们希望找到一个 椭圆放缩系数 *k*，它将标准的协方差椭圆（1*σ*）放缩到我们想要的95%概率所对应的置信椭圆
+
+由于 *σx* 和 *σy* 对应相互独立的随机变量的标准差，那么可以引入卡方分布(chi-square)这样一个新的定理来说明一个置信椭圆和其内部对应的概率之间的关系：&#x20;
+
+$$p=1-exp(-\frac{1}{2}k^2)</script><p>协方差椭圆 <script type="math/tex">k=1</script>，与之对应的概率为：</p>
+<script type="math/tex; mode=display">p=1-exp(-\frac{1}{2})=39.35\%</script><p>则对于任意概率，我们可以找到一个椭圆放缩系数：</p>
+<script type="math/tex; mode=display">k=\sqrt{-2ln(1-p)}</script><p>特别地，对95%的概率：</p>
+<h1 id="2-估计，准度和精度"><a href="#2-估计，准度和精度" class="headerlink" title="2. 估计，准度和精度"></a>2. 估计，准度和精度</h1><p>估计（Estimation） 是对系统的隐藏状态的估计</p>
+<p>准度 （Accuracy） 描述测量值与真值的接近情况，低准度系统被称为有偏（Biased）系统，测量结果往往受系统性误差（偏差）的影响</p>
+<p>精度（Precision）描述一系列测量值相对同一个真值的偏差分布情况，散布对测量的影响可以通过对测量结果求平均或进行平滑来降低</p>
+<p><img src="images/BrAibm8CPo6cLrxjg8OcfyLinbb.png" alt="Image Token: BrAibm8CPo6cLrxjg8OcfyLinbb"></p>
+<p>要求测量系统是无偏（Unbiased）的&#x20;</p>
+<p><img src="images/JjCUbcvcsoqFhjxCvAicv2Q5nuu.png" alt="Image Token: JjCUbcvcsoqFhjxCvAicv2Q5nuu"></p>
+<p>一次测量是对一个随机变量的取样，该随机变量由一个概率密度函数（PDF）来描述</p>
+<p>多次测量的平均值就是该随机变量的期望</p>
+<p>均值和真值之间的差是该测量系统的偏差或者系统性误差，它构成了测量系统的准度</p>
+<p>测量值的散布程度是该测量系统的测量噪声，又叫随机测量误差或测量不确定性，它构成了测量系统的精度         &#x20;</p>
+<h1 id="3-卡尔曼滤波器"><a href="#3-卡尔曼滤波器" class="headerlink" title="3. 卡尔曼滤波器"></a>3. 卡尔曼滤波器</h1><p><img src="images/JJ5Hbo1qGolJS7xrE5jcMLrxn6g.png" alt="Image Token: JJ5Hbo1qGolJS7xrE5jcMLrxn6g"></p>
+<p>卡尔曼滤波器是一种最优滤波器，最优性体现在它能够把上述状态预测和测量值融合在一起，使得得到的当前状态估计不确定性最小。</p>
+<p>当前状态估计值是状态预测和测量值的加权和：</p>
+<script type="math/tex; mode=display">\hat{x}_{n,n}=\omega_1z_n+\omega_2\hat{x}_{n,n-1}</script><script type="math/tex; mode=display">\omega_1+\omega_2=1</script><p>式中 <script type="math/tex">\omega_1</script> 和 <script type="math/tex">\omega_2</script> 分别是测量值和状态预测的权重。</p>
+<script type="math/tex; mode=display">\hat{x}_{n,n}=\omega_1z_n+(1-\omega_1)\hat{x}_{n,n-1}</script><p>对应地，方差如下：                                                        &#x20;</p>
+<script type="math/tex; mode=display">p_{n,n}={\omega_1}^2r_n+(1-\omega_1)^2p_{n,n-1}$$   &#x20;
+
+式中：
+
+$$p_{n,n}$$是最优估计 $$\hat{x}_{n,n}$$的方差
+
+$$p_{n,n-1}$$是状态预测 $$\hat{x}_{n,n-1}$$的方差
+
+$$r_n$$是测量值 $$z_n$$的方差
+
+寻找一个最优估计使$$p_{n,n}$$最小：
+
+$$\frac{d{p_{n,n}}}{d{\omega_1}}=2\omega_1r_n-2(1-\omega_1)p_{n,n-1}=0</script><script type="math/tex; mode=display">\omega_1=\frac{p_{n,n-1}}{p_{n,n-1}+r_n}=K_n</script><p>把上述结果代入当前状态估计:</p>
+<script type="math/tex; mode=display">\hat{x}_{n,n}=\hat{x}_{n,n-1}+K_n(z_n-\hat{x}_{n,n-1})=(1-K_n)\hat{x}_{n,n-1}+K_nz_n</script><p>还需要得到当前最优状态估计的方差：</p>
+<script type="math/tex; mode=display">p_{n,n}={K_n}^2r_n+(1-K_n)^2p_{n,n-1}=(1-K_n)p_{n,n-1}=\frac{p_{n,n-1}r_n}{p_{n,n-1}+r_n}$$&#x20;
+
+因为有  $$1-K_n \le1$$，状态估计的不确定性是始终在随着滤波器迭代而下降的。当测量不确定性很高的时候，卡尔曼增益很低，因此状态估计不确定性收敛的速度会较慢。相反当测量不确定性很低的时候卡尔曼增益则很高，故状态估计不确定性会快速收敛到0
+
+对于两个相互独立的正态分布 $$z_1\sim \mathcal{N}\left(\mu_1, \sigma_1^{2}\right)$$和$$z_2\sim \mathcal{N}\left(\mu_2, \sigma_2^{2}\right)$$，他们的最优融合为：
+
+&#x20;$$\hat{z}\sim \mathcal{N}\left(\frac{\sigma_2^{2}\mu_1 + \sigma_1^{2}\mu_2}{\sigma_1^{2}+\sigma_2^{2}}, \frac{\sigma_1^{2}\sigma_2^{2}}{\sigma_1^{2}+\sigma_2^{2}}\right)</script><p><img src="images/DkeUbIJipoMsObxP43UcsPOanvd.png" alt="Image Token: DkeUbIJipoMsObxP43UcsPOanvd"></p>
+<h3 id="3-1-状态外插方程"><a href="#3-1-状态外插方程" class="headerlink" title="3.1 状态外插方程"></a>3.1 状态外插方程</h3><p>基于当前的估计来预测或估计未来的状态</p>
+<script type="math/tex; mode=display">\hat{x}_{n+1,n}=F\hat{x}_{n,n}+Gu_n +\omega_n</script><p><img src="images/HJSIbTRvaoinsQxOaG8cRx5bnyh.png" alt="Image Token: HJSIbTRvaoinsQxOaG8cRx5bnyh"></p>
+<p>状态空间方程：</p>
+<script type="math/tex; mode=display">\dot{x}(t)=Ax(t)+Bu(t)</script><script type="math/tex; mode=display">y(t)=Cx(t)+Du(t)</script><p>我们需要寻找：</p>
+<script type="math/tex; mode=display">x(t+\Delta t)=Fx(t)+Gu(t)</script><p>可以得到：</p>
+<script type="math/tex; mode=display">F=e^{A \Delta t}</script><script type="math/tex; mode=display">G = \int_{0}^{\Delta t} e^{At}dtB</script><script type="math/tex; mode=display">\int_{0}^{\Delta t} e^{\boldsymbol{A} t} d t=\Delta t\left(I+\frac{\boldsymbol{A} \Delta t}{2!}+\frac{(\boldsymbol{A} \Delta t)^{2}}{3!}+\frac{(\boldsymbol{A} \Delta t)^{3}}{4!}+\ldots\right)</script><h3 id="3-2-协方差外插方程"><a href="#3-2-协方差外插方程" class="headerlink" title="3.2 协方差外插方程"></a>3.2 协方差外插方程</h3><p>估测的未来的状态估计的不确定性</p>
+<script type="math/tex; mode=display">\boldsymbol{P}_{n+1,n}=\boldsymbol{F}\boldsymbol{P}_{n,n}\boldsymbol{F}^T+\boldsymbol{Q}</script><p>推导：</p>
+<script type="math/tex; mode=display">\boldsymbol{P}_{n, n}=E\left(\left(\hat{\boldsymbol{x}}_{n, n}-\boldsymbol{\mu}_{x_{n, n}}\right)\left(\hat{\boldsymbol{x}}_{n, n}-\boldsymbol{\mu}_{x_{n, n}}\right)^{T}\right)</script><script type="math/tex; mode=display">\begin{array}{c}
+\boldsymbol{P}_{n+1, n}=E\left(\left(\hat{\boldsymbol{x}}_{n+1, n}-\boldsymbol{\mu}_{x_{n+1, n}}\right)\left(\hat{\boldsymbol{x}}_{n+1, n}-\boldsymbol{\mu}_{x_{n+1, n}}\right)^{T}\right) \\ =E\left(\left(\boldsymbol{F} \hat{\boldsymbol{x}}_{n, n}+\boldsymbol{G} \hat{\boldsymbol{u}}_{n, n}-\boldsymbol{F} \boldsymbol{\mu}_{\boldsymbol{x}_{n, n}}-\boldsymbol{G} \hat{\boldsymbol{u}}_{n, n}\right)\left(\boldsymbol{F} \hat{\boldsymbol{x}}_{n, n}+\boldsymbol{G} \hat{\boldsymbol{u}}_{n, n}-\boldsymbol{F} \boldsymbol{\mu}_{\boldsymbol{x}_{n, n}}-\boldsymbol{G} \hat{\boldsymbol{u}}_{n, n}\right)^{T}\right) \\ =E\left(\boldsymbol{F}\left(\hat{\boldsymbol{x}}_{n, n}-\boldsymbol{\mu}_{x_{n, n}}\right)\left(\boldsymbol{F}\left(\hat{\boldsymbol{x}}_{n, n}-\boldsymbol{\mu}_{x_{n, n}}\right)\right)^{T} \right) \\ =E\left(\boldsymbol{F}\left(\hat{\boldsymbol{x}}_{n, n}-\boldsymbol{\mu}_{x_{n, n}}\right)\left(\hat{\boldsymbol{x}}_{n, n}-\boldsymbol{\mu}_{x_{n, n}}\right)^{T} \boldsymbol{F}^{T}\right) \\ =\boldsymbol{F} E\left(\left(\hat{\boldsymbol{x}}_{n, n}-\boldsymbol{\mu}_{\boldsymbol{x}_{n, n}}\right)\left(\hat{\boldsymbol{x}}_{n, n}-\boldsymbol{\mu}_{\boldsymbol{x}_{n, n}}\right)^{T}\right) \boldsymbol{F}^{T} \\ =\boldsymbol{F} \boldsymbol{P}_{n, n} \boldsymbol{F}^{T}
+\end{array}</script><h3 id="3-3-过程噪声矩阵"><a href="#3-3-过程噪声矩阵" class="headerlink" title="3.3 过程噪声矩阵"></a>3.3 过程噪声矩阵</h3><p>在多维情况下，过程噪声是一个协方差矩阵，记为 <script type="math/tex">\boldsymbol{Q}</script>：</p>
+<script type="math/tex; mode=display">\boldsymbol{Q}=\left[\begin{array}{cccc}
+q_{11} & 0 & \cdots & 0 \\
+0 & q_{22} & \cdots & 0 \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & 0 & \cdots & q_{k k}
+\end{array}\right]</script><p>过程噪声也可以是相关的。比如匀速运动模型假设零加速度（<em>a</em>=0），但实际加速度的随机噪声 <script type="math/tex">\sigma_a^2</script>会造成速度和位置产生对应的扰动。这种情况下，过程噪声在状态变量间就是存在互相关的。</p>
+<p>过程噪声就是模型不准确性，模型近似程度越高就越不准确，噪声方差就要选得越大，大到一定程度KF就只相信测量值了，就起不到滤波效果了。</p>
+<h4 id="3-3-1-离散噪声模型"><a href="#3-3-1-离散噪声模型" class="headerlink" title="3.3.1 离散噪声模型"></a>3.3.1 离散噪声模型</h4><p>离散噪声模型假设噪声在每个采样点是不同的，但是在采样点之间是相同的（零阶保持）。</p>
+<p>对匀速运动模型，过程噪声协方差具有下述形式：<br> 
+$$\boldsymbol{Q}=\left[\begin{array}{cccc}
+V(x) & COV(x,v) \\
+COV(v,x) & V(v) \\
+\end{array}\right]$$
+
+$$V(v)=\sigma_v^2=E(v^2)-\mu_a^2=E((a\Delta t)^2)-(\mu_a\Delta t)^2={\Delta t}^2(E(a^2)-\mu_a^2)={\Delta t}^2\sigma^2_a$$
+
+$$V(x)=\sigma_x^2=E(x^2)-\mu_x^2=
+E((\frac{1}{2}a\Delta t^2)^2)-(\frac{1}{2}\mu_a\Delta t^2)^2=\frac{{\Delta t}^2}{4}(E(a^2)-\mu_a^2)=
+\frac{{\Delta t}^2}{4}\sigma^2_a$$
+
+$$COV(x,v)=COV(v,x)=E(xv)-\mu_x\mu_v=
+E(\frac{1}{2}a\Delta t^2a\Delta t-\frac{1}{2}\mu_a\Delta t^2\mu_a\Delta t)=\frac{{\Delta t}^3}{2}(E(a^2)-\mu_a^2)=
+\frac{{\Delta t}^3}{2}\sigma^2_a$$
+
+$$\boldsymbol{Q}=\sigma^2_a\left[\begin{array}{cccc}
+\frac{{\Delta t}^2}{4} & \frac{{\Delta t}^3}{2} \\
+\frac{{\Delta t}^3}{2}  & {\Delta t}^2  \\
+\end{array}\right]$$
+</p>
+<h3 id="3-4-测量方程"><a href="#3-4-测量方程" class="headerlink" title="3.4 测量方程"></a>3.4 测量方程</h3><script type="math/tex; mode=display">z_n=Hx_n+v_n</script><script type="math/tex; mode=display">z_n$$是测量值向量
+
+$$x_n$$是真实系统状态量
+
+$$v_n$$是随机噪声向量
+
+$$H$$是观测矩阵
+
+### 3.5 状态更新方程
+
+基于上一时刻的预测和当前的测量来估计当前的状态
+
+$$\hat{x}_{n,n}=\hat{x}_{n,n-1}+K_n(z_n-H\hat{x}_{n,n-1})</script><h3 id="3-6-协方差更新方程"><a href="#3-6-协方差更新方程" class="headerlink" title="3.6 协方差更新方程"></a>3.6 协方差更新方程</h3><p>当前状态估计的不确定性</p>
+<script type="math/tex; mode=display">P_{n,n}=(I-K_nH)P_{n,n-1}(I-K_nH)^T+K_nR_nK_n^T</script><p>推导：</p>
+<script type="math/tex; mode=display">\hat{x}_{n,n}=\hat{x}_{n,n-1}+K_n(z_n-H\hat{x}_{n,n-1})</script><script type="math/tex; mode=display">z_n=Hx_n+v_n</script><script type="math/tex; mode=display">P_{n,n}=E(e_ne_n^T)=E((x_n-\hat{x}_{n,n})(x_n-\hat{x}_{n,n})^T)</script><script type="math/tex; mode=display">R_n=E(v_nv_n^T)</script><p>带入测量方程：</p>
+<script type="math/tex; mode=display">\hat{x}_{n,n}=\hat{x}_{n,n-1}+K_n(Hx_n+v_n-H\hat{x}_{n,n-1})</script><script type="math/tex; mode=display">e_n=x_n-\hat{x}_{n,n}</script><p>带入：</p>
+<script type="math/tex; mode=display">e_n=\hat{x}_{n}-\hat{x}_{n,n-1}-K_n(Hx_n+v_n-H\hat{x}_{n,n-1})</script><script type="math/tex; mode=display">e_n=(I-K_nH)(\hat{x}_{n}-\hat{x}_{n,n-1})-K_nv_n</script><script type="math/tex; mode=display">P_{n,n}=E(e_ne_n^T)=E(((I-K_nH)(\hat{x}_{n}-\hat{x}_{n,n-1})-K_nv_n)((I-K_nH)(\hat{x}_{n}-\hat{x}_{n,n-1})-K_nv_n)^T)</script><script type="math/tex; mode=display">P_{n,n}=E(((I-K_nH)(\hat{x}_{n}-\hat{x}_{n,n-1})-K_nv_n)((\hat{x}_{n}-\hat{x}_{n,n-1})^T(I-K_nH)^T-{K_nv_n}^T))</script><p>由于 <script type="math/tex">\hat{x}_{n,n}-\hat{x}_{n,n-1}</script>是先验估计的误差，与当前测量噪声 <script type="math/tex">v_n</script>无关。<del>两个不相关的随机变量的积的期望是0。</del></p>
+<script type="math/tex; mode=display">E((\hat{x}_{n}-\hat{x}_{n,n-1})v_n^T)=E(\hat{x}_{n}-\hat{x}_{n,n-1})E(v_n^T)=0</script><p>展开：</p>
+<script type="math/tex; mode=display">P_{n,n}=E((I-K_nH)(\hat{x}_{n}-\hat{x}_{n,n-1})(\hat{x}_{n}-\hat{x}_{n,n-1})^T(I-K_nH)^T)+E(K_nv_n(K_nv_n)^T)</script><script type="math/tex; mode=display">P_{n,n}=(I-K_nH)E((\hat{x}_{n}-\hat{x}_{n,n-1})(\hat{x}_{n}-\hat{x}_{n,n-1})^T)(I-K_nH)^T+K_nE(v_nv_n^T)K_n^T</script><script type="math/tex; mode=display">P_{n,n}=(I-K_nH)P_{n,n-1}(I-K_nH)^T+K_nR_nK_n^T</script><h3 id="3-7-卡尔曼增益"><a href="#3-7-卡尔曼增益" class="headerlink" title="3.7 卡尔曼增益"></a>3.7 卡尔曼增益</h3><script type="math/tex; mode=display">K_n=P_{n,n-1}H^T(HP_{n,n-1}H^T+R_n)^{-1}</script><p>推导：</p>
+<script type="math/tex; mode=display">P_{n,n}=(I-K_nH)P_{n,n-1}(I-K_nH)^T+K_nR_nK_n^T</script><script type="math/tex; mode=display">P_{n,n}=(I-K_nH)P_{n,n-1}(I-H^TK_n^T)+K_nR_nK_n^T</script><script type="math/tex; mode=display">P_{n,n}=  P_{n,n-1}-P_{n,n-1}H^TK_n^T-K_nHP_{n,n-1}+K_nHP_{n,n-1}H^TK_n^T+K_nR_nK_n^T</script><script type="math/tex; mode=display">P_{n,n}=  P_{n,n-1}-P_{n,n-1}H^TK_n^T-K_nHP_{n,n-1}+K_n(HP_{n,n-1}H^T+R_n)K_n^T</script><p>要最小化方差的和，也就是最小化 <script type="math/tex">tr(P{n,n})</script>:</p>
+<script type="math/tex; mode=display">tr(P_{n,n})=  tr(P_{n,n-1})-2tr(K_nHP_{n,n-1})+tr(K_n(HP_{n,n-1}H^T+R_n)K_n^T)</script><p>对 $$K_n</p>
+<script type="math/tex; mode=display">求导，求极值：
+
+$$\frac{d(tr(P_{n,n-1}))}{dK_n}-\frac{d(2tr(K_nHP_{n,n-1}))}+\frac{d(tr(K_n(HP_{n,n-1}H^T+R_n)K_n^T))}{dK_n}=0</script><p>由于 <script type="math/tex">\frac{d(tr(AB))}{dA}=B^T,\frac{d(tr(ABA^T))}{dA}=2AB</script>：</p>
+<script type="math/tex; mode=display">0-2(HP_{n,n-1})^T+2K_n(HP_{n,n-1}H^T+R_n)=0</script><script type="math/tex; mode=display">(HP_{n,n-1})^T=K_n(HP_{n,n-1}H^T+R_n)</script><script type="math/tex; mode=display">K_n=(HP_{n,n-1})^T(HP_{n,n-1}H^T+R_n)^{-1}</script><script type="math/tex; mode=display">K_n=P_{n,n-1}^TH^T(HP_{n,n-1}H^T+R_n)^{-1}</script><p>由于 <script type="math/tex">P_{n,n-1}^T=P_{n,n-1}</script>：</p>
+<script type="math/tex; mode=display">K_n=P_{n,n-1}H^T(HP_{n,n-1}H^T+R_n)^{-1}</script><h4 id="3-7-1-协方差更新方程简化"><a href="#3-7-1-协方差更新方程简化" class="headerlink" title="3.7.1 协方差更新方程简化"></a>3.7.1 协方差更新方程简化</h4><script type="math/tex; mode=display">P_{n,n}=  P_{n,n-1}-P_{n,n-1}H^TK_n^T-K_nHP_{n,n-1}+K_n(HP_{n,n-1}H^T+R_n)K_n^T</script><p>带入 <script type="math/tex">K_n=P_{n,n-1}H^T(HP_{n,n-1}H^T+R_n)^{-1}</script>：</p>
+<script type="math/tex; mode=display">P_{n,n}=  P_{n,n-1}-P_{n,n-1}H^TK_n^T-K_nHP_{n,n-1}+P_{n,n-1}H^T(HP_{n,n-1}H^T+R_n)^{-1}(HP_{n,n-1}H^T+R_n)K_n^T</script><script type="math/tex; mode=display">P_{n,n}=  P_{n,n-1}-P_{n,n-1}H^TK_n^T-K_nHP_{n,n-1}+P_{n,n-1}H^TK_n^T</script><script type="math/tex; mode=display">P_{n,n}=  P_{n,n-1}-K_nHP_{n,n-1}</script><script type="math/tex; mode=display">P_{n,n}=  (I-K_nH)P_{n,n-1}</script><p>这个方程看起来要精炼很多并且容易记忆，并且在许多情况下没什么问题。</p>
+<p>但是，在计算卡尔曼增益时的一个小误差（浮点截尾误差）可能给结果带来巨大的偏差。</p>
+<p>&#x20;<script type="math/tex">(I-K_nH)</script>的差可能因为浮点计算误差而使其结果不再是对称阵。这个方程在数值计算上并不稳定。</p>
+<h3 id="3-8-总结"><a href="#3-8-总结" class="headerlink" title="3.8 总结"></a>3.8 总结</h3><p><img src="images/B1u2baHkPonPj2xaVV3cEww5nWf.png" alt="Image Token: B1u2baHkPonPj2xaVV3cEww5nWf"></p>
+<p><img src="images/NWoVb4sxRoUqFxxlzKmcenurnag.png" alt="Image Token: NWoVb4sxRoUqFxxlzKmcenurnag"></p>
+<p><img src="images/BkJCbfyzio5rItxRAO3cg1PYnpc.png" alt="Image Token: BkJCbfyzio5rItxRAO3cg1PYnpc"></p>
+<ul>
+<li><p>&#x20;<script type="math/tex">n_x</script>是状态向量中的状态个数                                                                                        &#x20;</p>
+</li>
+<li><p>&#x20;<script type="math/tex">n_z</script>是测量到的状态个数                                                                                        &#x20;</p>
+</li>
+<li><p>&#x20;<script type="math/tex">n_u</script>是输入向量中的元素个数&#x20;</p>
+</li>
+</ul>
+<h1 id="4-误差传播"><a href="#4-误差传播" class="headerlink" title="4. 误差传播"></a>4. 误差传播</h1><p>设测量（C）由一些测量值（X和Y）计算得到：</p>
+<script type="math/tex; mode=display">C=f(X,Y)</script><p>那么：</p>
+<script type="math/tex; mode=display">\sigma_C^2=\frac{1}{N-1}\sum_{i=1}^{N}{(C_i-\bar{C})^2}</script><script type="math/tex; mode=display">C_{i}-\bar{C}=\left(X_{i}-\bar{X}\right) \frac{\partial f}{\partial X}+\left(Y_{i}-\bar{Y}\right) \frac{\partial f}{\partial Y}</script><script type="math/tex; mode=display">\sigma_{C}^{2}=\frac{1}{n-1} \sum_{i=1}^{n}\left[\left(X_{i}-\bar{X}\right) \frac{\partial f}{\partial X}+\left(Y_{i}-\bar{Y}\right) \frac{\partial f}{\partial Y}\right]^{2}</script><script type="math/tex; mode=display">\sigma_{C}^{2}=\sigma_{X}^{2}\left(\frac{\partial f}{\partial X}\right)^{2}+\sigma_{Y}^{2}\left(\frac{\partial f}{\partial Y}\right)^{2}+2 \operatorname{cov}(X, Y) \frac{\partial f}{\partial X} \frac{\partial f}{\partial Y}</script><script type="math/tex; mode=display">
+\sigma_{C}^{2}=\left[\frac{\partial f}{\partial X} \frac{\partial f}{\partial Y}\right]\left[\begin{array}{cc}
+\sigma_{X}^{2} & \operatorname{cov}(X, Y) \\
+\operatorname{cov}(X, Y) & \sigma_{Y}^{2}
+\end{array}\right]\left[\begin{array}{l}
+\frac{\partial f}{\partial X} \\
+\frac{\partial f}{\partial Y}
+\end{array}\right]</script><p>其中， <script type="math/tex">\left[\frac{\partial f}{\partial X} \frac{\partial f}{\partial Y}\right]</script>称为雅克比矩阵</p>
+<p>如果X，Y相互独立，那么：</p>
+<script type="math/tex; mode=display">\sigma_{C}^{2}=\sigma_{X}^{2}\left(\frac{\partial f}{\partial X}\right)^{2}+\sigma_{Y}^{2}\left(\frac{\partial f}{\partial Y}\right)^{2}</script><h1 id="5-融合算法"><a href="#5-融合算法" class="headerlink" title="5. 融合算法"></a>5. 融合算法</h1><p><img src="images/YZHcbmL28oCAZ1xzWPncLsLznUb.png" alt="Image Token: YZHcbmL28oCAZ1xzWPncLsLznUb"></p>
+<p><img src="images/S3nIbZAuxox37HxljQRcq89in9y.png" alt="Image Token: S3nIbZAuxox37HxljQRcq89in9y"></p>
+<p><img src="images/CMCrb6oTooo2a3xAL4ucLCDqnxe.png" alt="Image Token: CMCrb6oTooo2a3xAL4ucLCDqnxe"></p>
+<h3 id="5-1-计算-J-S："><a href="#5-1-计算-J-S：" class="headerlink" title="5.1 计算 J_S："></a>5.1 计算 <script type="math/tex">J_S</script>：</h3><script type="math/tex; mode=display">J_S=P({^B}R_M^T{^S}R_B^T)=P{^S}R_M^T</script><h3 id="5-2-计算-J-Phi："><a href="#5-2-计算-J-Phi：" class="headerlink" title="5.2 计算 J_\Phi："></a>5.2 计算 <script type="math/tex">J_\Phi</script>：</h3>
+$$J_\phi=P {{^B}R_M^T}({^S}R_B^T{^S}r_{SP}^{\times}+{^B}r_{BS}^{\times})=P {{^S}R_M^T}({^S}r_{SP}^{\times}+{^S}r_{BS}^{\times})$$
+
+<p>这个和论文里不一样，可能是考虑了BS向量的不确定性：<br>
+$$p=P({^S}R_M^{T}  {^{S} r_{SP}}+{^S}R_M^T{^{S} r_{BS}}-{^{M} r_{BM}})$$
+<br><img src="images/V9c6b6mHwo2Spwx6Joic6zw3nbe.png" alt="Image Token: V9c6b6mHwo2Spwx6Joic6zw3nbe"></p>
+<h3 id="5-3-计算-Sigma-S"><a href="#5-3-计算-Sigma-S" class="headerlink" title="5.3 计算 \Sigma_S"></a>5.3 计算 <script type="math/tex">\Sigma_S</script></h3><p>相机参数：</p>
+<ol>
+<li>depth_to_disparity_factor</li>
+</ol>
+<p>将深度值（Z坐标）转换为视差（disparity）的缩放因子。</p>
+<script type="math/tex; mode=display">disparity=\frac{factor}{depth}</script><p>factor是基线长度：指两个相机（或双目传感器的左右镜头）<strong>光学中心之间的水平距离</strong></p>
+<ul>
+<li>lateral_factor</li>
+</ul>
+<p>控制水平方向（X/Y平面）的测量误差增长速率。反映<strong>像素匹配误差</strong>和<strong>镜头畸变</strong>导致的水平不确定性。</p>
+<script type="math/tex; mode=display">varianceLateral=(lateral\_factor\times distance)^2</script><ul>
+<li>深度不确定性参数（p1~p5）
+$$varianceNormal=(\frac{factor}{{disparity}^2})^2[(p_5disparity+p_2)\sqrt{(p_3disparity+p_4-j)^2+(240-i)^2}+p_1]$$
+
+| 参数 | 物理意义                             | 来源          |<br>| — | ———————————————— | —————- |<br>| p1 | <strong>基础噪声</strong>：与距离无关的固定误差（如传感器噪声）      | 硬件噪声、量化误差   |<br>| p2 | <strong>线性视差项系数</strong>：调节误差随距离的线性增长         | 匹配算法误差      |<br>| p3 | <strong>列方向缩放系数</strong>：控制误差在图像列方向的分布        | 镜头畸变（如径向畸变） |<br>| p4 | <strong>列基准偏移</strong>：图像中心列的参考值              | 相机标定内参      |<br>| p5 | <strong>高阶视差项系数</strong>：捕捉远距离的非线性误差（如三角测量误差） | 基线长度限制      |</li>
+</ul>
+<h4 id="深度误差（Z方向）"><a href="#深度误差（Z方向）" class="headerlink" title="深度误差（Z方向）"></a><strong>深度误差（Z方向）</strong></h4><ul>
+<li><p><strong>近距离</strong>：<code>p_1</code> 主导（固定噪声）。</p>
+</li>
+<li><p><strong>中距离</strong>：<code>p_2</code> 和 <code>p_3</code> 主导（线性增长 + 边缘效应）。</p>
+</li>
+<li><p><strong>远距离</strong>：<code>p_5</code> 和 <code>(factor/disparity²)²</code> 主导（误差随距离四次方增长）。</p>
+</li>
+</ul>
+<h4 id="水平误差（X-Y方向）"><a href="#水平误差（X-Y方向）" class="headerlink" title="水平误差（X/Y方向）"></a><strong>水平误差（X/Y方向）</strong></h4><ul>
+<li><p>由 <code>lateral_factor</code> 控制，误差随距离线性增长：</p>
+</li>
+<li><p>水平误差∝distance×lateral_factor水平误差∝distance×lateral_factor</p>
+</li>
+</ul>
+<h3 id="5-4-计算-Sigma-Phi-IS"><a href="#5-4-计算-Sigma-Phi-IS" class="headerlink" title="5.4 计算 \Sigma_{\Phi_{IS}}"></a>5.4 计算 <script type="math/tex">\Sigma_{\Phi_{IS}}</script></h3></article><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E5%8D%A1%E5%B0%94%E6%9B%BC%E6%BB%A4%E6%B3%A2/">卡尔曼滤波</a><a class="post-meta__tags" href="/tags/%E4%BC%A0%E6%84%9F%E5%99%A8%E8%9E%8D%E5%90%88/">传感器融合</a><a class="post-meta__tags" href="/tags/IMU/">IMU</a></div><div class="post-share"><div class="social-share" data-image="/img/dog-icon.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2025/06/20/ZBC-PD%E6%8E%A7%E5%88%B6%E5%99%A8/" title="PD控制器"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">PD控制器</div></div><div class="info-2"><div class="info-item-1">PD控制器原理及前馈对系统性能的影响</div></div></div></a><a class="pagination-related" href="/2025/06/05/ZBC-%E6%B1%87%E5%B7%9D%E8%BD%AC%E7%9F%A9%E6%A8%A1%E5%BC%8F%E5%AE%9E%E7%8E%B0/" title="汇川转矩模式实现"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">汇川转矩模式实现</div></div><div class="info-2"><div class="info-item-1">汇川伺服转矩模式实现方案</div></div></div></a></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/dog-icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">BeichenZhuo</div><div class="author-info-description">伺服&机器人技术笔记</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">37</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">83</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/BeichenZhuo"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E9%9A%8F%E6%9C%BA%E5%8F%98%E9%87%8F"><span class="toc-number">1.</span> <span class="toc-text">1. 随机变量</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-1-%E5%9F%BA%E6%9C%AC%E6%9C%9F%E6%9C%9B%E4%BB%A3%E6%95%B0%E8%BF%90%E7%AE%97%E6%B3%95%E5%88%99"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 基本期望代数运算法则</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-3-%E5%8D%8F%E6%96%B9%E5%B7%AE%E7%9F%A9%E9%98%B5"><span class="toc-number">1.2.</span> <span class="toc-text">1.3 协方差矩阵</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#1-3-1-%E6%80%A7%E8%B4%A8"><span class="toc-number">1.2.1.</span> <span class="toc-text">1.3.1 性质</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#1-3-2-%E6%9C%9F%E6%9C%9B"><span class="toc-number">1.2.2.</span> <span class="toc-text">1.3.2 期望</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-4-%E5%A4%9A%E5%8F%98%E9%87%8F%E6%AD%A3%E6%80%81%E5%88%86%E5%B8%83"><span class="toc-number">1.3.</span> <span class="toc-text">1.4 多变量正态分布</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-5-%E7%BD%AE%E4%BF%A1%E5%8C%BA%E9%97%B4"><span class="toc-number">1.4.</span> <span class="toc-text">1.5 置信区间</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#1-6-%E7%BD%AE%E4%BF%A1%E6%A4%AD%E5%9C%86"><span class="toc-number">1.5.</span> <span class="toc-text">1.6 置信椭圆</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E4%BC%B0%E8%AE%A1%EF%BC%8C%E5%87%86%E5%BA%A6%E5%92%8C%E7%B2%BE%E5%BA%A6"><span class="toc-number">2.</span> <span class="toc-text">2. 估计，准度和精度</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E5%8D%A1%E5%B0%94%E6%9B%BC%E6%BB%A4%E6%B3%A2%E5%99%A8"><span class="toc-number">3.</span> <span class="toc-text">3. 卡尔曼滤波器</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E7%8A%B6%E6%80%81%E5%A4%96%E6%8F%92%E6%96%B9%E7%A8%8B"><span class="toc-number">3.1.</span> <span class="toc-text">3.1 状态外插方程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-%E5%8D%8F%E6%96%B9%E5%B7%AE%E5%A4%96%E6%8F%92%E6%96%B9%E7%A8%8B"><span class="toc-number">3.2.</span> <span class="toc-text">3.2 协方差外插方程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-3-%E8%BF%87%E7%A8%8B%E5%99%AA%E5%A3%B0%E7%9F%A9%E9%98%B5"><span class="toc-number">3.3.</span> <span class="toc-text">3.3 过程噪声矩阵</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-3-1-%E7%A6%BB%E6%95%A3%E5%99%AA%E5%A3%B0%E6%A8%A1%E5%9E%8B"><span class="toc-number">3.3.1.</span> <span class="toc-text">3.3.1 离散噪声模型</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-4-%E6%B5%8B%E9%87%8F%E6%96%B9%E7%A8%8B"><span class="toc-number">3.4.</span> <span class="toc-text">3.4 测量方程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-6-%E5%8D%8F%E6%96%B9%E5%B7%AE%E6%9B%B4%E6%96%B0%E6%96%B9%E7%A8%8B"><span class="toc-number">3.5.</span> <span class="toc-text">3.6 协方差更新方程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-7-%E5%8D%A1%E5%B0%94%E6%9B%BC%E5%A2%9E%E7%9B%8A"><span class="toc-number">3.6.</span> <span class="toc-text">3.7 卡尔曼增益</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#3-7-1-%E5%8D%8F%E6%96%B9%E5%B7%AE%E6%9B%B4%E6%96%B0%E6%96%B9%E7%A8%8B%E7%AE%80%E5%8C%96"><span class="toc-number">3.6.1.</span> <span class="toc-text">3.7.1 协方差更新方程简化</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-8-%E6%80%BB%E7%BB%93"><span class="toc-number">3.7.</span> <span class="toc-text">3.8 总结</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E8%AF%AF%E5%B7%AE%E4%BC%A0%E6%92%AD"><span class="toc-number">4.</span> <span class="toc-text">4. 误差传播</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E8%9E%8D%E5%90%88%E7%AE%97%E6%B3%95"><span class="toc-number">5.</span> <span class="toc-text">5. 融合算法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-%E8%AE%A1%E7%AE%97-J-S%EF%BC%9A"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 计算 J_S：</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-%E8%AE%A1%E7%AE%97-J-Phi%EF%BC%9A"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 计算 J_\Phi：</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-%E8%AE%A1%E7%AE%97-Sigma-S"><span class="toc-number">5.3.</span> <span class="toc-text">5.3 计算 \Sigma_S</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%B7%B1%E5%BA%A6%E8%AF%AF%E5%B7%AE%EF%BC%88Z%E6%96%B9%E5%90%91%EF%BC%89"><span class="toc-number">5.3.1.</span> <span class="toc-text">深度误差（Z方向）</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%B0%B4%E5%B9%B3%E8%AF%AF%E5%B7%AE%EF%BC%88X-Y%E6%96%B9%E5%90%91%EF%BC%89"><span class="toc-number">5.3.2.</span> <span class="toc-text">水平误差（X&#x2F;Y方向）</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-4-%E8%AE%A1%E7%AE%97-Sigma-Phi-IS"><span class="toc-number">5.4.</span> <span class="toc-text">5.4 计算 \Sigma_{\Phi_{IS}}</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/18/%E6%9C%BA%E5%99%A8%E4%BA%BA%E5%85%B3%E8%8A%82%E6%A8%A1%E7%BB%84%E4%B8%8A%E4%BD%8D%E6%9C%BAAPI%E8%B0%83%E7%A0%94/" title="机器人关节模组上位机API调研">机器人关节模组上位机API调研</a><time datetime="2026-03-18T02:25:15.000Z" title="发表于 2026-03-18 10:25:15">2026-03-18</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/02/10/%E6%9C%BA%E5%99%A8%E4%BA%BA%E5%85%B3%E8%8A%82%E6%8E%A7%E5%88%B6/" title="机器人关节控制">机器人关节控制</a><time datetime="2026-02-10T09:31:12.000Z" title="发表于 2026-02-10 17:31:12">2026-02-10</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/02/10/%E8%BD%AC%E7%9F%A9%E9%97%AD%E7%8E%AF/" title="转矩闭环">转矩闭环</a><time datetime="2026-02-10T09:31:12.000Z" title="发表于 2026-02-10 17:31:12">2026-02-10</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/01/15/ZBC-EOE%E5%8A%9F%E8%83%BD%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/" title="EOE功能使用方法">EOE功能使用方法</a><time datetime="2026-01-15T02:15:30.000Z" title="发表于 2026-01-15 10:15:30">2026-01-15</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/12/20/ZBC-PIN%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" title="PIN源码阅读">PIN源码阅读</a><time datetime="2025-12-20T03:00:00.000Z" title="发表于 2025-12-20 11:00:00">2025-12-20</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By BeichenZhuo</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.5</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.5"></script><script src="/js/main.js?v=5.5.5"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.1.2/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

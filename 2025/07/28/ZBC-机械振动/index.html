@@ -1,0 +1,308 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>机械振动 | BeichenZhuo的Blog</title><meta name="author" content="BeichenZhuo"><meta name="copyright" content="BeichenZhuo"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="机械振动阻抗表示及最优控制方法">
+<meta property="og:type" content="article">
+<meta property="og:title" content="机械振动">
+<meta property="og:url" content="https://beichenzhuo.github.io/2025/07/28/ZBC-%E6%9C%BA%E6%A2%B0%E6%8C%AF%E5%8A%A8/index.html">
+<meta property="og:site_name" content="BeichenZhuo的Blog">
+<meta property="og:description" content="机械振动阻抗表示及最优控制方法">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://beichenzhuo.github.io/img/dog-icon.png">
+<meta property="article:published_time" content="2025-07-28T07:20:30.000Z">
+<meta property="article:modified_time" content="2026-06-25T00:33:40.634Z">
+<meta property="article:author" content="BeichenZhuo">
+<meta property="article:tag" content="LQR">
+<meta property="article:tag" content="机械振动">
+<meta property="article:tag" content="阻抗控制">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://beichenzhuo.github.io/img/dog-icon.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "机械振动",
+  "url": "https://beichenzhuo.github.io/2025/07/28/ZBC-%E6%9C%BA%E6%A2%B0%E6%8C%AF%E5%8A%A8/",
+  "image": "https://beichenzhuo.github.io/img/dog-icon.png",
+  "datePublished": "2025-07-28T07:20:30.000Z",
+  "dateModified": "2026-06-25T00:33:40.634Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "BeichenZhuo",
+      "url": "https://BeichenZhuo.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://beichenzhuo.github.io/2025/07/28/ZBC-%E6%9C%BA%E6%A2%B0%E6%8C%AF%E5%8A%A8/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.5"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '机械振动',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/custom.css"><meta name="generator" content="Hexo 8.1.2"></head><body><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">BeichenZhuo的Blog</span></a><a class="nav-page-title" href="/"><span class="site-name">机械振动</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"></div></nav><div id="post-info"><h1 class="post-title">机械振动</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-07-28T07:20:30.000Z" title="发表于 2025-07-28 15:20:30">2025-07-28</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-06-25T00:33:40.634Z" title="更新于 2026-06-25 08:33:40">2026-06-25</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="1-振动的阻抗表示"><a href="#1-振动的阻抗表示" class="headerlink" title="1. 振动的阻抗表示"></a>1. 振动的阻抗表示</h1><p>机械输入阻抗为输入力复幅值与驱动点速度之比。</p>
+<h2 id="1-1-无阻尼系统"><a href="#1-1-无阻尼系统" class="headerlink" title="1.1 无阻尼系统"></a>1.1 无阻尼系统</h2><p>对于单惯量无阻尼系统：</p>
+<script type="math/tex; mode=display">M\ddot{x}(t)+Kx(t)=f(t)</script><p>令：<script type="math/tex">x(t)=Ae^{j\omega t}</script>，<script type="math/tex">f(t) = F e^{j\omega t}</script></p>
+<p>那么：<script type="math/tex">\dot{x}(t)=j\omega Ae^{j\omega t}</script>，<script type="math/tex">\ddot{x}(t)=-\omega^2 Ae^{j\omega t}</script></p>
+<p>则输入阻抗为：</p>
+<script type="math/tex; mode=display">Z_i=\frac{f(t)}{\dot{x}(t)}=\frac{F}{j\omega A}</script><p>令：<script type="math/tex">\omega_n=\sqrt{\frac{K}{M}}</script></p>
+<p>那么：</p>
+<script type="math/tex; mode=display">Z_i=\frac{f(t)}{\dot{x}(t)}=\frac{-jK(1-{\frac{\omega}{\omega_n}}^2 )}{\omega}</script><p>联立得到：</p>
+<script type="math/tex; mode=display">\frac{AK}{F}=\frac{1}{1-{\frac{\omega}{\omega_n}}^2}</script><p>其中<script type="math/tex">\frac{AK}{F}</script>为无量纲（归一化）位移，<script type="math/tex">\frac{\omega}{\omega_n}</script>为无量纲（归一化）输入频率。</p>
+<h2 id="1-2-有阻尼系统"><a href="#1-2-有阻尼系统" class="headerlink" title="1.2 有阻尼系统"></a>1.2 有阻尼系统</h2><p>对于单惯量有阻尼系统：</p>
+<script type="math/tex; mode=display">M\ddot{x}(t)+C\dot{x}(t)+Kx(t)=f(t)</script><p>令：<script type="math/tex">x(t)=Ae^{j\omega t}</script>，<script type="math/tex">f(t) = F e^{j\omega t}</script></p>
+<p>那么：<script type="math/tex">\dot{x}(t)=j\omega Ae^{j\omega t}</script>，<script type="math/tex">\ddot{x}(t)=-\omega^2 Ae^{j\omega t}</script>l</p>
+<p>则输入阻抗为：</p>
+<script type="math/tex; mode=display">Z_i=\frac{f(t)}{\dot{x}(t)}=\frac{F}{j\omega A}</script><p>令<script type="math/tex">\zeta=\frac{C}{2M\omega_n}</script></p>
+<script type="math/tex; mode=display">Z_i=\frac{f(t)}{\dot{x}(t)}=\frac{-jK(1+j2\zeta\frac{\omega}{\omega_n}-{\frac{\omega}{\omega_n}}^2 )}{\omega}</script><p>联立得到：</p>
+<script type="math/tex; mode=display">\frac{AK}{F}=\frac{1}{1-{\frac{\omega}{\omega_n}}^2+j2\zeta\frac{\omega}{\omega_n}}</script><p>其中<script type="math/tex">\frac{AK}{F}</script>为无量纲（归一化）位移，<script type="math/tex">\frac{\omega}{\omega_n}</script>为无量纲（归一化）输入频率。</p>
+<p>有阻尼系统位移是复数，幅值表示最大振幅，相角表示与输入力的相位差。</p>
+<p><img src="images/X99rbbeSXoALXlx9ZnAcjhJznGc.png" alt="Image Token: X99rbbeSXoALXlx9ZnAcjhJznGc"></p>
+<h1 id="2-闭环控制"><a href="#2-闭环控制" class="headerlink" title="2. 闭环控制"></a>2. 闭环控制</h1><script type="math/tex; mode=display">M\ddot{x}(t)+C\dot{x}(t)+Kx(t)=Du(t)+Ef(t)</script><p>其中D和E分别是控制力输入矩阵和外部扰动力矩阵。</p>
+<p>M，C，K是nXn维矩阵，D是nXm维矩阵，E是nXr维矩阵。</p>
+<p>认为控制输入<script type="math/tex">u(t)</script>是位移<script type="math/tex">x(t)</script>，速度<script type="math/tex">\dot{x}(t)</script>，外力<script type="math/tex">f(t)</script>的线性组合：</p>
+<script type="math/tex; mode=display">u(t)=K_1x(t)+C_1\dot{x}(t)+E_1f(t)</script><p>其中<script type="math/tex">K_1,C_1,E_1</script>可以是时变的。</p>
+<script type="math/tex; mode=display">M\ddot{x}(t)+(C-DC_1)\dot{x}(t)+(K-DK_1)x(t)=(E+DE_1)f(t)</script><p>系统闭环控制就是通过输入改变系统的阻尼和刚度。</p>
+<h1 id="3-状态空间方程"><a href="#3-状态空间方程" class="headerlink" title="3. 状态空间方程"></a>3. 状态空间方程</h1><p>令<script type="math/tex">z(t)=\begin{bmatrix}
+ x(t)\\
+\dot{x}(t)
+\end{bmatrix}</script>：</p>
+<script type="math/tex; mode=display">\dot{z}(t)=A{z}(t)+Bu(t)+Hf(t)</script><p>其中：<script type="math/tex">A=\begin{bmatrix}
+ 0 & I\\
+ -M^{-1}K & -M^{-1}C
+\end{bmatrix}</script>，<script type="math/tex">B=\begin{bmatrix}
+ 0 \\
+ M^{-1}D
+\end{bmatrix}</script>，<script type="math/tex">H=\begin{bmatrix}
+ 0 \\
+ M^{-1}E
+\end{bmatrix}</script></p>
+<p>这就是系统状态空间方程的形式。</p>
+<h1 id="4-最优控制"><a href="#4-最优控制" class="headerlink" title="4. 最优控制"></a>4. 最优控制</h1><p>取惩罚函数为：</p>
+<script type="math/tex; mode=display">J = \int_{0}^{t_f} [z^T(t)Qz(t)+u^T(t)Ru(t)]dt</script><p>其中Q为半正定矩阵，R为正定矩阵。</p>
+<p>拉格朗日方程：</p>
+<script type="math/tex; mode=display">L=\int_{0}^{t_f}[z^T(t)Qz(t)+u^T(t)Ru(t)+λ^T(t)(Az(t)+Bu(t)+Hf(t)−\dot{z}(t))]dt</script><p>令<script type="math/tex">\mathcal{H}=z^TQz+u^TRu+λ^T(Az+Bu+Hf)</script></p>
+<script type="math/tex; mode=display">L=\int_{0}^{t_f}(\mathcal{H}−λ^T\dot{z})dt</script><p>对J取一阶变分：<script type="math/tex">z(t)→z(t)+δz(t)，u(t)→u(t)+δu(t)</script>，<script type="math/tex">λ(t)，f(t)</script>当做常值，<script type="math/tex">δz(0)=0</script></p>
+<script type="math/tex; mode=display">δL=\int_{0}^{t_f}((\frac{∂\mathcal{H}}{∂z})^Tδz+(\frac{∂\mathcal{H}}{∂u})^Tδu−λ^Tδ\dot{z})dt</script><p>将 <script type="math/tex">λ^Tδ\dot{z}</script> 项进行分部积分：</p>
+<script type="math/tex; mode=display">\int_{0}^{t_f}λ^Tδ\dot{z}dt={λ(t)^Tδz(t)}\mid^{t_f}_{0}−\int_{0}^{t_f}\dot{λ}^Tδz dt</script><script type="math/tex; mode=display">δL=-{λ(t)^Tδz(t)}\mid^{t_f}_{0}+\int_{0}^{t_f}[(\frac{∂\mathcal{H}}{∂z}+\dot{λ}^T)^Tδz+(\frac{∂\mathcal{H}}{∂u})
+^Tδu]dt</script><p>设<script type="math/tex">δz(0)=0</script>，要使得<script type="math/tex">δL=0</script>:</p>
+<script type="math/tex; mode=display">\dot{λ}=-\frac{∂\mathcal{H}}{∂z}，λ(t_f)=0</script><script type="math/tex; mode=display">\frac{∂\mathcal{H}}{∂u}=0</script><p>得到最终结果：</p>
+<script type="math/tex; mode=display">\dot{λ}=-A^Tλ-2Qz，λ(t_f)=0</script><script type="math/tex; mode=display">u=-\frac{1}{2}R^{-1}B^Tλ</script><h2 id="4-1-闭环控制（LQR）"><a href="#4-1-闭环控制（LQR）" class="headerlink" title="4.1 闭环控制（LQR）"></a>4.1 闭环控制（LQR）</h2><p>令<script type="math/tex">λ(t)=P(t)z(t)</script>：</p>
+<script type="math/tex; mode=display">[\dot{P}(t) + P(t )A -\frac{1}{2} P(t)BR^{-1}B^TP(t) +A^TP(t) + 2Q] z(t) + P(t )Hf(t) = 0，P(t_f)=0</script><p>当<script type="math/tex">f(t) = 0</script>时：</p>
+<script type="math/tex; mode=display">\dot{P}(t) + P(t )A -\frac{1}{2} P(t)BR^{-1}B^TP(t) +A^TP(t) + 2Q，P(t_f)=0</script><script type="math/tex; mode=display">u(t)=G(t)z(t)=-\frac{1}{2}R^{-1}B^TP(t)z(t)</script><script type="math/tex; mode=display">G(t)=-\frac{1}{2}R^{-1}B^TP(t)</script><p>即为控制增益。</p>
+<p>若<script type="math/tex">f(t) \ne 0</script>，此时并不是最优解，需要结合前馈。在结构控制中<script type="math/tex">P(t)</script>一般在过程中不变，只在快结束时快速下降。因此可以简化为常数矩阵：</p>
+<script type="math/tex; mode=display">PA+A^TP−PBR^{−1}B^TP+2Q=0</script><script type="math/tex; mode=display">G=-\frac{1}{2}R^{-1}B^TP</script><p>原状态空间方程变为：</p>
+<script type="math/tex; mode=display">\dot{z}(t)=(A+BG){z}(t)+Hf(t)</script><p>由开环的矩阵<script type="math/tex">A</script>变为闭环矩阵<script type="math/tex">A+BG</script>。</p>
+<h3 id="4-1-1-状态观测"><a href="#4-1-1-状态观测" class="headerlink" title="4.1.1 状态观测"></a>4.1.1 状态观测</h3><p>这种控制方式需要了解全部的状态<script type="math/tex">z(t)</script>，实际很少能测得全部的状态:</p>
+<script type="math/tex; mode=display">y(t)=Cz(t)+\eta</script><p>其中<script type="math/tex">\eta</script>是测量噪声。需要进行状态估测得到<script type="math/tex">\hat{z}(t)</script>。当信噪比足够高时使用Luenberger观测器，否则使用Kalman滤波器：</p>
+<script type="math/tex; mode=display">\hat{\dot{z}}(t)=A\hat{z}(t)+Bu(t)+L(C\hat{z}(t)-y(t))</script><p>其中<script type="math/tex">L</script>如果使用Luenberger观测器设计就是一个常数矩阵，如果使用Kalman滤波器是一个时变矩阵，需要通过解另一个Riccati方程实时计算，计算量比较大。</p>
+<h2 id="4-2-闭开环控制和开环控制"><a href="#4-2-闭开环控制和开环控制" class="headerlink" title="4.2 闭开环控制和开环控制"></a>4.2 闭开环控制和开环控制</h2><p>如果能够测得外部力，那么可以更好地控制。</p>
+<p>令<script type="math/tex">λ(t)=P(t)z(t)+S(t)f(t)</script>：<script type="math/tex">[\dot{P}(t) + P(t )A -\frac{1}{2} P(t)BR^{-1}B^TP(t) +A^TP(t) + 2Q] z(t) + \dot{S}(t)f(t)+S(t)\dot{f}(t)-(\frac{1}{2} P(t)BR^{-1}B^T-A^T)S(t)f(t)+P(t )Hf(t) = 0，P(t_f)=0， S(t_f)=0</script><br>$P(t)$部分依然按照前述处理，剩余部分：</p>
+<script type="math/tex; mode=display">[\dot{S}(t)-(\frac{1}{2} P(t)BR^{-1}B^T-A^T)S(t)+P(t )H]f(t) +S(t)\dot{f}(t)= 0，S(t_f)=0</script><p>由于<script type="math/tex">S(t)</script>依赖于<script type="math/tex">f(t)，\dot{f}(t)</script>无法预先得知，因此无法计算最优前馈。</p>
+<h1 id="5-极点配置"><a href="#5-极点配置" class="headerlink" title="5. 极点配置"></a>5. 极点配置</h1><script type="math/tex; mode=display">\dot{z}(t)=(A+BG){z}(t)+Hf(t)</script><p>设<script type="math/tex">\eta</script>是特征根：</p>
+<script type="math/tex; mode=display">\left | \eta I-A-BG  \right |=0</script><p>可以写作：</p>
+<script type="math/tex; mode=display">(\left | \eta I-A  \right |)(\left | I-\Psi(\eta)G \right |)=0</script><script type="math/tex; mode=display">\Psi(\eta)=(\eta I-A)^{-1}B</script><p>因为特征值发生了变化，所以：</p>
+<script type="math/tex; mode=display">\left | \eta I-A  \right | \ne0</script><p>因此令<script type="math/tex">\Delta(\eta)</script>：</p>
+<script type="math/tex; mode=display">\left |\Delta(\eta)\right |=\left | I_{2n}-\Psi(\eta)G \right |=0</script><p>由行列式等式：</p>
+<script type="math/tex; mode=display">\left |\Delta(\eta)\right |=\left | I_{m}-G\Psi(\eta) \right |=0</script><p>这样就将2n维转化为m维。</p>
+<p>对于第i个特征值<script type="math/tex">\eta_i</script>，需要让<script type="math/tex">\Delta(\eta_i)</script>的行列式为0，只需要让<script type="math/tex">\Delta(\eta_i)</script>的第j列为0即可。</p>
+<p>选择第j列，<script type="math/tex">e_j</script>是一个单位列向量，只有第j个值为1：</p>
+<script type="math/tex; mode=display">e_j = G\psi_j(\eta_i)</script><p>将选择的i个向量拼起来：</p>
+<script type="math/tex; mode=display">E=G \Psi</script><p>即可求解G：</p>
+<script type="math/tex; mode=display">G=E\Psi^{-1}</script><p>因此，为了获得相同的特征根G的选择不唯一。</p>
+</article><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E9%98%BB%E6%8A%97%E6%8E%A7%E5%88%B6/">阻抗控制</a><a class="post-meta__tags" href="/tags/%E6%9C%BA%E6%A2%B0%E6%8C%AF%E5%8A%A8/">机械振动</a><a class="post-meta__tags" href="/tags/LQR/">LQR</a></div><div class="post-share"><div class="social-share" data-image="/img/dog-icon.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2025/07/30/ZBC-%E5%9F%BA%E4%BA%8E%E6%9C%AB%E7%AB%AF%E9%80%9F%E5%BA%A6%E5%8F%8D%E9%A6%88%E7%9A%84%E6%8C%AF%E5%8A%A8%E6%8A%91%E5%88%B6/" title="基于末端速度反馈的振动抑制"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">基于末端速度反馈的振动抑制</div></div><div class="info-2"><div class="info-item-1">基于末端速度反馈的双惯量模型振动抑制方法</div></div></div></a><a class="pagination-related" href="/2025/07/20/ZBC-PDFF%E4%BA%8C%E8%87%AA%E7%94%B1%E5%BA%A6PI/" title="PDFF——二自由度PI"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">PDFF——二自由度PI</div></div><div class="info-2"><div class="info-item-1">PDFF控制器原理及二自由度PI控制特性</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/10/25/ZBC-%E5%85%B3%E8%8A%82%E6%9F%94%E9%A1%BA%E6%8E%A7%E5%88%B6%E6%96%B9%E6%A1%88/" title="关节柔顺控制方案"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-10-25</div><div class="info-item-2">关节柔顺控制方案</div></div><div class="info-2"><div class="info-item-1">机器人关节阻抗/导纳控制及SEA关节设计方案</div></div></div></a><a class="pagination-related" href="/2025/07/05/ZBC-%E5%B7%A5%E4%B8%9A%E5%8D%8F%E4%BD%9C%E6%A8%A1%E5%9E%8B%E5%AF%B9%E6%AF%94/" title="工业协作模型对比"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-07-05</div><div class="info-item-2">工业协作模型对比</div></div><div class="info-2"><div class="info-item-1">工业机器人与协作机器人控制模型对比分析</div></div></div></a><a class="pagination-related" href="/2025/10/03/ZBC-%E6%9C%BA%E5%99%A8%E4%BA%BA%E4%B8%8A%E8%82%A2%E5%85%B3%E8%8A%82%E9%98%BB%E6%8A%97%E6%8E%A7%E5%88%B6(%E6%9C%80%E6%97%A9)/" title="机器人上肢关节阻抗控制(最早)"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-10-03</div><div class="info-item-2">机器人上肢关节阻抗控制(最早)</div></div><div class="info-2"><div class="info-item-1">二阶系统、机器人动力学及关节阻抗控制方案</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/dog-icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">BeichenZhuo</div><div class="author-info-description">伺服&机器人技术笔记</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">37</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">83</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/BeichenZhuo"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#1-%E6%8C%AF%E5%8A%A8%E7%9A%84%E9%98%BB%E6%8A%97%E8%A1%A8%E7%A4%BA"><span class="toc-number">1.</span> <span class="toc-text">1. 振动的阻抗表示</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-1-%E6%97%A0%E9%98%BB%E5%B0%BC%E7%B3%BB%E7%BB%9F"><span class="toc-number">1.1.</span> <span class="toc-text">1.1 无阻尼系统</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-2-%E6%9C%89%E9%98%BB%E5%B0%BC%E7%B3%BB%E7%BB%9F"><span class="toc-number">1.2.</span> <span class="toc-text">1.2 有阻尼系统</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#2-%E9%97%AD%E7%8E%AF%E6%8E%A7%E5%88%B6"><span class="toc-number">2.</span> <span class="toc-text">2. 闭环控制</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#3-%E7%8A%B6%E6%80%81%E7%A9%BA%E9%97%B4%E6%96%B9%E7%A8%8B"><span class="toc-number">3.</span> <span class="toc-text">3. 状态空间方程</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#4-%E6%9C%80%E4%BC%98%E6%8E%A7%E5%88%B6"><span class="toc-number">4.</span> <span class="toc-text">4. 最优控制</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#4-1-%E9%97%AD%E7%8E%AF%E6%8E%A7%E5%88%B6%EF%BC%88LQR%EF%BC%89"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 闭环控制（LQR）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-1-%E7%8A%B6%E6%80%81%E8%A7%82%E6%B5%8B"><span class="toc-number">4.1.1.</span> <span class="toc-text">4.1.1 状态观测</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-2-%E9%97%AD%E5%BC%80%E7%8E%AF%E6%8E%A7%E5%88%B6%E5%92%8C%E5%BC%80%E7%8E%AF%E6%8E%A7%E5%88%B6"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 闭开环控制和开环控制</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#5-%E6%9E%81%E7%82%B9%E9%85%8D%E7%BD%AE"><span class="toc-number">5.</span> <span class="toc-text">5. 极点配置</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/18/%E6%9C%BA%E5%99%A8%E4%BA%BA%E5%85%B3%E8%8A%82%E6%A8%A1%E7%BB%84%E4%B8%8A%E4%BD%8D%E6%9C%BAAPI%E8%B0%83%E7%A0%94/" title="机器人关节模组上位机API调研">机器人关节模组上位机API调研</a><time datetime="2026-03-18T02:25:15.000Z" title="发表于 2026-03-18 10:25:15">2026-03-18</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/02/10/%E6%9C%BA%E5%99%A8%E4%BA%BA%E5%85%B3%E8%8A%82%E6%8E%A7%E5%88%B6/" title="机器人关节控制">机器人关节控制</a><time datetime="2026-02-10T09:31:12.000Z" title="发表于 2026-02-10 17:31:12">2026-02-10</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/02/10/%E8%BD%AC%E7%9F%A9%E9%97%AD%E7%8E%AF/" title="转矩闭环">转矩闭环</a><time datetime="2026-02-10T09:31:12.000Z" title="发表于 2026-02-10 17:31:12">2026-02-10</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/01/15/ZBC-EOE%E5%8A%9F%E8%83%BD%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/" title="EOE功能使用方法">EOE功能使用方法</a><time datetime="2026-01-15T02:15:30.000Z" title="发表于 2026-01-15 10:15:30">2026-01-15</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/12/20/ZBC-PIN%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" title="PIN源码阅读">PIN源码阅读</a><time datetime="2025-12-20T03:00:00.000Z" title="发表于 2025-12-20 11:00:00">2025-12-20</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By BeichenZhuo</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.5</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.5"></script><script src="/js/main.js?v=5.5.5"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.1.2/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

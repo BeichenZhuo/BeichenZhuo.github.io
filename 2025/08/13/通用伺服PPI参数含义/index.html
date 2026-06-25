@@ -1,0 +1,684 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>通用伺服PPI参数含义 | BeichenZhuo的Blog</title><meta name="author" content="BeichenZhuo"><meta name="copyright" content="BeichenZhuo"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="解析通用伺服PPI参数含义，包括速度环增益，负载惯量，速度环积分，转矩指令低通滤波，位置环增益，速度前馈系数等">
+<meta property="og:type" content="article">
+<meta property="og:title" content="通用伺服PPI参数含义">
+<meta property="og:url" content="https://beichenzhuo.github.io/2025/08/13/%E9%80%9A%E7%94%A8%E4%BC%BA%E6%9C%8DPPI%E5%8F%82%E6%95%B0%E5%90%AB%E4%B9%89/index.html">
+<meta property="og:site_name" content="BeichenZhuo的Blog">
+<meta property="og:description" content="解析通用伺服PPI参数含义，包括速度环增益，负载惯量，速度环积分，转矩指令低通滤波，位置环增益，速度前馈系数等">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://beichenzhuo.github.io/img/dog-icon.png">
+<meta property="article:published_time" content="2025-08-13T12:40:19.000Z">
+<meta property="article:modified_time" content="2026-06-24T22:51:41.891Z">
+<meta property="article:author" content="BeichenZhuo">
+<meta property="article:tag" content="伺服控制">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://beichenzhuo.github.io/img/dog-icon.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "通用伺服PPI参数含义",
+  "url": "https://beichenzhuo.github.io/2025/08/13/%E9%80%9A%E7%94%A8%E4%BC%BA%E6%9C%8DPPI%E5%8F%82%E6%95%B0%E5%90%AB%E4%B9%89/",
+  "image": "https://beichenzhuo.github.io/img/dog-icon.png",
+  "datePublished": "2025-08-13T12:40:19.000Z",
+  "dateModified": "2026-06-24T22:51:41.891Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "BeichenZhuo",
+      "url": "https://BeichenZhuo.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://beichenzhuo.github.io/2025/08/13/%E9%80%9A%E7%94%A8%E4%BC%BA%E6%9C%8DPPI%E5%8F%82%E6%95%B0%E5%90%AB%E4%B9%89/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.5"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '通用伺服PPI参数含义',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/custom.css"><meta name="generator" content="Hexo 8.1.2"></head><body><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">BeichenZhuo的Blog</span></a><a class="nav-page-title" href="/"><span class="site-name">通用伺服PPI参数含义</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"></div></nav><div id="post-info"><h1 class="post-title">通用伺服PPI参数含义</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-08-13T12:40:19.000Z" title="发表于 2025-08-13 20:40:19">2025-08-13</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-06-24T22:51:41.891Z" title="更新于 2026-06-25 06:51:41">2026-06-25</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h1><p><img src="images/DIvIbkfLoovclSxp3rNclvoUnbf.jpeg" alt="Image Token: DIvIbkfLoovclSxp3rNclvoUnbf"></p>
+<p>如上图，伺服位置环，速度环PPI参数：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th></th>
+<th>含义</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$K_v$</td>
+<td>速度环增益</td>
+<td>系统响应带宽</td>
+</tr>
+<tr>
+<td>$J$</td>
+<td>负载惯量</td>
+<td>设置成实际的惯量能保证系统带宽稳定</td>
+</tr>
+<tr>
+<td>$K_i$</td>
+<td>速度环积分</td>
+<td>保持稳态无静差</td>
+</tr>
+<tr>
+<td>$K_t$</td>
+<td>转矩指令低通滤波</td>
+<td>抑制高频噪声</td>
+</tr>
+<tr>
+<td>$K_p$</td>
+<td>位置环增益</td>
+<td>系统响应带宽</td>
+</tr>
+<tr>
+<td>$K_{vf}$</td>
+<td>速度前馈系数</td>
+<td>前馈不影响系统稳定性</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>对于带前馈的PPI控制器。</p>
+<p><img src="images/FixvbhgkpoRK3QxpWvTcGueinAg.jpeg" alt="Image Token: FixvbhgkpoRK3QxpWvTcGueinAg"></p>
+<p>可以转化为：</p>
+<p><img src="images/Sym4blnIFoD4zwxVVqvcTNKznLd.jpeg" alt="Image Token: Sym4blnIFoD4zwxVVqvcTNKznLd"></p>
+<p>对于位置环，控制器为PID，其中：</p>
+<script type="math/tex; mode=display">PIV(s)=\frac{K_v(s+K_p)(s+K_i)}{s}=K_v(K_p+K_i)+\frac{K_vK_pK_i}{s}+K_vs</script><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>PID参数</th>
+<th>对应PPI参数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$P$</td>
+<td>$K_v(K_p+K_i)$</td>
+</tr>
+<tr>
+<td>$I$</td>
+<td>$K_vK_pK_i$</td>
+</tr>
+<tr>
+<td>$D$</td>
+<td>$K_v$</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>速度前馈系数可以将位置闭环零点 $K_p$转换为 $\frac{K_p}{K_{vf}}$，可以调节系统动态响应。</p>
+<p>转矩指令滤波时间$K_t$相比于电气时间常数很大，可以看做将电机变成一个低通滤波。</p>
+<p>被控对象可以看做是名义负载 $\frac{1}{(J+J_1)s^2}$与一个加扰动或乘扰动复合，只考虑名义负载：</p>
+<p><img src="images/Kom8b6tfoo8Y57x5guRcMkQ2ndf.png" alt="Image Token: Kom8b6tfoo8Y57x5guRcMkQ2ndf"></p>
+<p>根据Routh判据，稳定条件：</p>
+<script type="math/tex; mode=display">K_i>0,K_p>0,K_v>\frac{K_iK_p}{K_i+K_p-\frac{(K_i+K_p)^2}{K_t}},K_t>K_i+K_p</script><p>该简单模型的位置环稳定就能保证速度环稳定，但其他复杂情况有待验证。</p>
+<h1 id="伺服与机器人PPI参数区别"><a href="#伺服与机器人PPI参数区别" class="headerlink" title="伺服与机器人PPI参数区别"></a>伺服与机器人PPI参数区别</h1><div class="table-container">
+<table>
+<thead>
+<tr>
+<th></th>
+<th>伺服</th>
+<th>机器人</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$K_v$</td>
+<td>基准，与刚性等级对应</td>
+<td></td>
+<td>一般PPI参数都建立与的关系</td>
+</tr>
+<tr>
+<td>$J$</td>
+<td>控制对象一般惯量不变，设置为辨识值，比较准确</td>
+<td>控制对象惯量随姿态变化，惯量设置为最大惯量的2/3，不准确</td>
+<td>惯量不准确会导致控制系统带宽不保持稳定</td>
+</tr>
+<tr>
+<td>$K_i$</td>
+<td></td>
+<td></td>
+<td>机器人应该是考虑到惯量的不稳定，因此选用更小的来保证更大范围的稳定</td>
+</tr>
+<tr>
+<td>$K_t$</td>
+<td></td>
+<td>固定值0.5ms(318Hz)</td>
+<td>机器人不关心这个，但实际影响不小，应该尽量地小，抑制噪声</td>
+</tr>
+<tr>
+<td>$K_p$</td>
+<td></td>
+<td>基准，设置为一阶模态()</td>
+<td>机器人用模态对应位置带宽（认为约等于位置闭环带宽）</td>
+</tr>
+<tr>
+<td>$K_{vf}$</td>
+<td>普通情况0，视情况调节</td>
+<td>普通情况0，高精度为1</td>
+<td>不影响系统稳定性，提高响应，但不能抗扰</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h1 id="Bode图比较"><a href="#Bode图比较" class="headerlink" title="Bode图比较"></a>Bode图比较</h1><h2 id="速度开环："><a href="#速度开环：" class="headerlink" title="速度开环："></a>速度开环：</h2><p><img src="images/SwoBbR6FVoAh4yxRYY4cKiCZnpe.png" alt="Image Token: SwoBbR6FVoAh4yxRYY4cKiCZnpe"></p>
+<p>开环0dB最好配置在相位裕度最好的频率。</p>
+<p>机器人$K_i$比较小，相位更好，对惯量变化的鲁棒性更好，上图中30°相位裕度的频率更宽，能够应对更大范围的惯量变化，尤其是偏小的惯量。</p>
+<h2 id="速度闭环："><a href="#速度闭环：" class="headerlink" title="速度闭环："></a>速度闭环：</h2><p><img src="images/Gy8SbHM1tozy3yxFbeMc1nM4nOh.png" alt="Image Token: Gy8SbHM1tozy3yxFbeMc1nM4nOh"></p>
+<p>将-3dB带宽频率配置成相位-45°，这样速度闭环可以近似为一阶低通滤波器。</p>
+<h2 id="位置开环："><a href="#位置开环：" class="headerlink" title="位置开环："></a>位置开环：</h2><p><img src="images/UxLXbmq0joBDVHxg84FcpaV0nae.png" alt="Image Token: UxLXbmq0joBDVHxg84FcpaV0nae"></p>
+<p>与$K_i$类似，较小的$K_p$可以更好的适应惯量的变化，但极限性能受到影响。</p>
+<h2 id="位置闭环："><a href="#位置闭环：" class="headerlink" title="位置闭环："></a>位置闭环：</h2><p><img src="images/ULMEbcRyuoL5VExzkNhcSEtNnug.png" alt="Image Token: ULMEbcRyuoL5VExzkNhcSEtNnug"></p>
+<p>将-3dB带宽频率配置成相位-90°，这样速度闭环可以近似为阻尼比0.707的二阶低通滤波器。</p>
+<h1 id="标准刚性等级表"><a href="#标准刚性等级表" class="headerlink" title="标准刚性等级表"></a>标准刚性等级表</h1><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>刚性等级</th>
+<th>$K_v$</th>
+<th>$K_p$</th>
+<th>$K_i$</th>
+<th>$K_t$</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>刚性0</td>
+<td>24</td>
+<td>15</td>
+<td>50000</td>
+<td>1326</td>
+</tr>
+<tr>
+<td>刚性1</td>
+<td>32</td>
+<td>20</td>
+<td>39789</td>
+<td>995</td>
+</tr>
+<tr>
+<td>刚性2</td>
+<td>40</td>
+<td>25</td>
+<td>31831</td>
+<td>796</td>
+</tr>
+<tr>
+<td>刚性3</td>
+<td>48</td>
+<td>30</td>
+<td>26526</td>
+<td>663</td>
+</tr>
+<tr>
+<td>刚性4</td>
+<td>56</td>
+<td>35</td>
+<td>22736</td>
+<td>568</td>
+</tr>
+<tr>
+<td>刚性5</td>
+<td>72</td>
+<td>45</td>
+<td>17684</td>
+<td>442</td>
+</tr>
+<tr>
+<td>刚性6</td>
+<td>96</td>
+<td>60</td>
+<td>13263</td>
+<td>332</td>
+</tr>
+<tr>
+<td>刚性7</td>
+<td>120</td>
+<td>75</td>
+<td>10610</td>
+<td>265</td>
+</tr>
+<tr>
+<td>刚性8</td>
+<td>144</td>
+<td>90</td>
+<td>8842</td>
+<td>221</td>
+</tr>
+<tr>
+<td>刚性9</td>
+<td>176</td>
+<td>110</td>
+<td>7234</td>
+<td>181</td>
+</tr>
+<tr>
+<td>刚性10</td>
+<td>1288</td>
+<td>180</td>
+<td>4421</td>
+<td>111</td>
+</tr>
+<tr>
+<td>刚性11</td>
+<td>400</td>
+<td>250</td>
+<td>3183</td>
+<td>79</td>
+</tr>
+<tr>
+<td>刚性12</td>
+<td>480</td>
+<td>300</td>
+<td>2653</td>
+<td>66</td>
+</tr>
+<tr>
+<td>刚性14</td>
+<td>560</td>
+<td>350</td>
+<td>2274</td>
+<td>57</td>
+</tr>
+<tr>
+<td>刚性15</td>
+<td>640</td>
+<td>400</td>
+<td>1989</td>
+<td>50</td>
+</tr>
+<tr>
+<td>刚性16</td>
+<td>800</td>
+<td>500</td>
+<td>1592</td>
+<td>40</td>
+</tr>
+<tr>
+<td>刚性17</td>
+<td>960</td>
+<td>600</td>
+<td>1326</td>
+<td>33</td>
+</tr>
+<tr>
+<td>刚性18</td>
+<td>1200</td>
+<td>750</td>
+<td>1061</td>
+<td>27</td>
+</tr>
+<tr>
+<td>刚性19</td>
+<td>1440</td>
+<td>900</td>
+<td>884</td>
+<td>22</td>
+</tr>
+<tr>
+<td>刚性20</td>
+<td>1840</td>
+<td>1150</td>
+<td>692</td>
+<td>17</td>
+</tr>
+<tr>
+<td>刚性21</td>
+<td>2240</td>
+<td>1400</td>
+<td>568</td>
+<td>14</td>
+</tr>
+<tr>
+<td>刚性22</td>
+<td>2720</td>
+<td>1700</td>
+<td>468</td>
+<td>12</td>
+</tr>
+<tr>
+<td>刚性23</td>
+<td>3360</td>
+<td>2100</td>
+<td>379</td>
+<td>9</td>
+</tr>
+<tr>
+<td>刚性24</td>
+<td>4000</td>
+<td>2500</td>
+<td>318</td>
+<td>8</td>
+</tr>
+<tr>
+<td>刚性25</td>
+<td>4480</td>
+<td>2800</td>
+<td>284</td>
+<td>7</td>
+</tr>
+<tr>
+<td>刚性26</td>
+<td>4960</td>
+<td>3100</td>
+<td>257</td>
+<td>6</td>
+</tr>
+<tr>
+<td>刚性27</td>
+<td>5440</td>
+<td>3400</td>
+<td>234</td>
+<td>6</td>
+</tr>
+<tr>
+<td>刚性28</td>
+<td>5920</td>
+<td>3700</td>
+<td>215</td>
+<td>5</td>
+</tr>
+<tr>
+<td>刚性29</td>
+<td>6400</td>
+<td>4000</td>
+<td>199</td>
+<td>5</td>
+</tr>
+<tr>
+<td>刚性30</td>
+<td>7200</td>
+<td>4500</td>
+<td>177</td>
+<td>5</td>
+</tr>
+<tr>
+<td>刚性31</td>
+<td>8000</td>
+<td>5000</td>
+<td>160</td>
+<td>5</td>
+</tr>
+<tr>
+<td>刚性32</td>
+<td>8800</td>
+<td>5500</td>
+<td>145</td>
+<td>3</td>
+</tr>
+<tr>
+<td>刚性33</td>
+<td>9600</td>
+<td>6000</td>
+<td>133</td>
+<td>3</td>
+</tr>
+<tr>
+<td>刚性34</td>
+<td>10400</td>
+<td>6500</td>
+<td>123</td>
+<td>3</td>
+</tr>
+<tr>
+<td>刚性35</td>
+<td>11200</td>
+<td>7000</td>
+<td>114</td>
+<td>0</td>
+</tr>
+<tr>
+<td>刚性36</td>
+<td>12000</td>
+<td>7500</td>
+<td>106</td>
+<td>0</td>
+</tr>
+<tr>
+<td>刚性37</td>
+<td>12800</td>
+<td>8000</td>
+<td>100</td>
+<td>0</td>
+</tr>
+<tr>
+<td>刚性38</td>
+<td>13600</td>
+<td>8500</td>
+<td>94</td>
+<td>0</td>
+</tr>
+<tr>
+<td>刚性39</td>
+<td>14400</td>
+<td>9000</td>
+<td>88</td>
+<td>0</td>
+</tr>
+<tr>
+<td>刚性40</td>
+<td>15200</td>
+<td>9500</td>
+<td>84</td>
+<td>0</td>
+</tr>
+<tr>
+<td>刚性41</td>
+<td>16000</td>
+<td>10000</td>
+<td>80</td>
+<td>0</td>
+</tr>
+<tr>
+<td>刚性42</td>
+<td>16000</td>
+<td>10000</td>
+<td>80</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+</div>
+</article><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E4%BC%BA%E6%9C%8D%E6%8E%A7%E5%88%B6/">伺服控制</a></div><div class="post-share"><div class="social-share" data-image="/img/dog-icon.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2025/08/15/ZBC-PID%E7%9A%84%E6%97%A0%E6%BA%90%E6%80%A7/" title="PID的无源性"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">PID的无源性</div></div><div class="info-2"><div class="info-item-1">PID控制器无源性条件及无源PID设计方法</div></div></div></a><a class="pagination-related" href="/2025/08/13/2000%E5%B9%B4DLR%E6%B2%A1%E6%9C%89%E5%86%85%E5%A4%96%E7%8E%AF%E7%9A%84%E8%AE%BA%E6%96%87/" title="2000年DLR没有内外环的论文"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">2000年DLR没有内外环的论文</div></div><div class="info-2"><div class="info-item-1">转矩传感器和位置不是内外环关系，而是并联相加的关系</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/08/25/ZBC-%E5%8F%8C%E9%97%AD%E7%8E%AF%E4%BD%8D%E7%BD%AE%E5%8F%8D%E9%A6%88%E6%8E%A7%E5%88%B6/" title="双闭环位置反馈控制"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-25</div><div class="info-item-2">双闭环位置反馈控制</div></div><div class="info-2"><div class="info-item-1">半闭环、全闭环与双闭环位置反馈控制对比</div></div></div></a><a class="pagination-related" href="/2025/09/05/%E4%BD%8D%E7%BD%AE%E6%8C%87%E4%BB%A4%E6%8F%92%E8%A1%A5%E4%B8%8E%E4%B8%8D%E6%8F%92%E8%A1%A5%E5%8C%BA%E5%88%AB/" title="位置指令插补与不插补区别"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-09-05</div><div class="info-item-2">位置指令插补与不插补区别</div></div><div class="info-2"><div class="info-item-1">位置指令插补与不插补的响应特性对比</div></div></div></a><a class="pagination-related" href="/2025/06/20/ZBC-%E5%8D%8F%E4%BD%9C%E8%87%82%E4%BC%BA%E6%9C%8D%E5%9B%9B%E7%8E%AF%E6%8E%A7%E5%88%B6/" title="协作臂伺服四环控制"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-06-20</div><div class="info-item-2">协作臂伺服四环控制</div></div><div class="info-2"><div class="info-item-1">协作臂伺服四环控制架构及阻抗模式分析</div></div></div></a><a class="pagination-related" href="/2025/08/05/ZBC-%E5%85%B3%E8%8A%82%E6%A8%A1%E7%BB%84%E4%BC%BA%E6%9C%8D%E7%94%B5%E6%B5%81%E7%8E%AF/ZBC-%E5%85%B3%E8%8A%82%E6%A8%A1%E7%BB%84%E4%BC%BA%E6%9C%8D%E7%94%B5%E6%B5%81%E7%8E%AF/" title="关节模组伺服电流环"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-05</div><div class="info-item-2">关节模组伺服电流环</div></div><div class="info-2"><div class="info-item-1">关节模组伺服电流环延迟分析及建模</div></div></div></a><a class="pagination-related" href="/2025/11/28/ZBC-PPI%E5%8F%82%E6%95%B0%E4%B8%8E%E5%85%B1%E6%8C%AF/" title="PPI参数与共振"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-11-28</div><div class="info-item-2">PPI参数与共振</div></div><div class="info-2"><div class="info-item-1">PPI参数(Kp、Kv、Ki)对低频共振的影响分析</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/dog-icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">BeichenZhuo</div><div class="author-info-description">伺服&机器人技术笔记</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">37</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">83</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">0</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/BeichenZhuo"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%A6%82%E8%BF%B0"><span class="toc-number">1.</span> <span class="toc-text">概述</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%BC%BA%E6%9C%8D%E4%B8%8E%E6%9C%BA%E5%99%A8%E4%BA%BAPPI%E5%8F%82%E6%95%B0%E5%8C%BA%E5%88%AB"><span class="toc-number">2.</span> <span class="toc-text">伺服与机器人PPI参数区别</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Bode%E5%9B%BE%E6%AF%94%E8%BE%83"><span class="toc-number">3.</span> <span class="toc-text">Bode图比较</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%9F%E5%BA%A6%E5%BC%80%E7%8E%AF%EF%BC%9A"><span class="toc-number">3.1.</span> <span class="toc-text">速度开环：</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%9F%E5%BA%A6%E9%97%AD%E7%8E%AF%EF%BC%9A"><span class="toc-number">3.2.</span> <span class="toc-text">速度闭环：</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BD%8D%E7%BD%AE%E5%BC%80%E7%8E%AF%EF%BC%9A"><span class="toc-number">3.3.</span> <span class="toc-text">位置开环：</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BD%8D%E7%BD%AE%E9%97%AD%E7%8E%AF%EF%BC%9A"><span class="toc-number">3.4.</span> <span class="toc-text">位置闭环：</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%A0%87%E5%87%86%E5%88%9A%E6%80%A7%E7%AD%89%E7%BA%A7%E8%A1%A8"><span class="toc-number">4.</span> <span class="toc-text">标准刚性等级表</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/18/%E6%9C%BA%E5%99%A8%E4%BA%BA%E5%85%B3%E8%8A%82%E6%A8%A1%E7%BB%84%E4%B8%8A%E4%BD%8D%E6%9C%BAAPI%E8%B0%83%E7%A0%94/" title="机器人关节模组上位机API调研">机器人关节模组上位机API调研</a><time datetime="2026-03-18T02:25:15.000Z" title="发表于 2026-03-18 10:25:15">2026-03-18</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/02/10/%E6%9C%BA%E5%99%A8%E4%BA%BA%E5%85%B3%E8%8A%82%E6%8E%A7%E5%88%B6/" title="机器人关节控制">机器人关节控制</a><time datetime="2026-02-10T09:31:12.000Z" title="发表于 2026-02-10 17:31:12">2026-02-10</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/02/10/%E8%BD%AC%E7%9F%A9%E9%97%AD%E7%8E%AF/" title="转矩闭环">转矩闭环</a><time datetime="2026-02-10T09:31:12.000Z" title="发表于 2026-02-10 17:31:12">2026-02-10</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/01/15/ZBC-EOE%E5%8A%9F%E8%83%BD%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/" title="EOE功能使用方法">EOE功能使用方法</a><time datetime="2026-01-15T02:15:30.000Z" title="发表于 2026-01-15 10:15:30">2026-01-15</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/12/20/ZBC-PIN%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" title="PIN源码阅读">PIN源码阅读</a><time datetime="2025-12-20T03:00:00.000Z" title="发表于 2025-12-20 11:00:00">2025-12-20</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By BeichenZhuo</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.5</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.5"></script><script src="/js/main.js?v=5.5.5"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.1.2/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
