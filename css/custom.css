@@ -1,21 +1,66 @@
 <style>
+
 /* 全局页面字体 */
-html,body{
-  font-family: "Microsoft YaHei",PingFang SC,SimHei,sans-serif;
+html,
+body {
+  font-family: "Microsoft YaHei", PingFang SC, SimHei, sans-serif;
   font-size: 16px;
   line-height: 1.7;
 }
+
 /* 正文内容字体 */
-.post-content{
-  font-family: "思源宋体",SimSun,"Microsoft YaHei",serif;
+.post-content {
+  font-family: "思源宋体", SimSun, "Microsoft YaHei", serif;
   font-size: 17px;
 }
+
 /* 代码块等宽字体（写C++、命令行必备） */
-pre,code{
-  font-family: "Fira Code",Consolas,monospace;
+pre,
+code {
+  font-family: "Fira Code", Consolas, monospace;
 }
+
 /* 数学公式字体优化 */
-.MathJax{
+.MathJax {
   font-size: 105% !important;
 }
+
+
+
+/* 页面渐变背景 浅色模式 */
+#web_bg {
+  background: linear-gradient(180deg, #f5f7fa 0%, #e4e8f0 100%) !important;
+}
+
+/* 页面渐变背景 暗黑模式 */
+[data-theme="dark"] #web_bg {
+  background: linear-gradient(180deg, #1e2129 0%, #11141b 100%) !important;
+}
+
+/* 文章卡片、侧边卡片半透明，透出渐变背景 */
+#article-container,
+#aside-content .card-widget,
+.recent-post-item,
+.layout>div:not(#web_bg) {
+  background: rgba(255, 255, 255, 0.72) !important;
+}
+
+/* 暗黑模式下卡片半透明深色背景 */
+[data-theme="dark"] #article-container,
+[data-theme="dark"] #aside-content .card-widget,
+[data-theme="dark"] .recent-post-item,
+[data-theme="dark"] .layout>div:not(#web_bg) {
+  background: rgba(25, 28, 36, 0.75) !important;
+}
+
+/* 导航栏毛玻璃适配渐变 */
+#nav {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.65) !important;
+}
+
+[data-theme="dark"] #nav {
+  background: rgba(25, 28, 36, 0.65) !important;
+}
+
 </style>

@@ -178,9 +178,9 @@
       
         <tags>
             
-            <tag> 振动抑制 </tag>
-            
             <tag> 滤波器 </tag>
+            
+            <tag> 振动抑制 </tag>
             
             <tag> 主动阻尼 </tag>
             
@@ -203,9 +203,9 @@
             
             <tag> 伺服调参 </tag>
             
-            <tag> 机器人控制 </tag>
-            
             <tag> PPI参数 </tag>
+            
+            <tag> 机器人控制 </tag>
             
         </tags>
       
@@ -295,9 +295,9 @@
             
             <tag> 共振抑制 </tag>
             
-            <tag> 双惯量模型 </tag>
-            
             <tag> 反馈控制 </tag>
+            
+            <tag> 双惯量模型 </tag>
             
         </tags>
       
@@ -586,9 +586,9 @@
             
             <tag> 振动抑制 </tag>
             
-            <tag> 速度反馈 </tag>
-            
             <tag> 双惯量模型 </tag>
+            
+            <tag> 速度反馈 </tag>
             
         </tags>
       
@@ -704,6 +704,41 @@
             <tag> 工业控制 </tag>
             
             <tag> 协作机器人 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>干摩擦自振与极限环——从理论到MATLAB仿真</title>
+      <link href="/2025/06/29/%E5%B9%B2%E6%91%A9%E6%93%A6%E8%87%AA%E6%8C%AF%E4%B8%8E%E6%9E%81%E9%99%90%E7%8E%AF/"/>
+      <url>/2025/06/29/%E5%B9%B2%E6%91%A9%E6%93%A6%E8%87%AA%E6%8C%AF%E4%B8%8E%E6%9E%81%E9%99%90%E7%8E%AF/</url>
+      
+        <content type="html"><![CDATA[<h2 id="1-引言"><a href="#1-引言" class="headerlink" title="1 引言"></a>1 引言</h2><p>你是否注意过，提琴弓子摩擦琴弦能发出悠扬乐音，而推门时轴承却会发出刺耳的“吱嘎”声？这两种现象背后，其实隐藏着同一个物理机理——<strong>干摩擦自激振动</strong>。<br>在机械工程中，这类自振常表现为进给机构低速爬行、机床车刀切削颤振、制动器啸叫等有害现象，会大幅降低加工精度、加剧零部件磨损，严重时直接缩短设备服役寿命。</p><h2 id="2-物理模型与数学描述"><a href="#2-物理模型与数学描述" class="headerlink" title="2 物理模型与数学描述"></a>2 物理模型与数学描述</h2><h3 id="2-1-系统构成"><a href="#2-1-系统构成" class="headerlink" title="2.1 系统构成"></a>2.1 系统构成</h3><p>选取经典<strong>滑块-弹簧-匀速传送带</strong>单自由度动力学模型：<br>质量为 $m$ 的滑块通过刚度 $k$ 的弹簧连接固定端，滑块放置在以恒定速度 $v_0$ 匀速运动的传送带上；滑块与传送带间存在非线性干摩擦力 $\varphi(v)$，摩擦力由滑块与传送带的<strong>相对速度</strong>决定。<br>定义 $\xi$ 为弹簧伸长量，则滑块与传送带的相对速度：</p><script type="math/tex; mode=display">v = \dot{\xi} - v_0</script><p><img src="images/46be6257bc264232815141192d687863.png" alt="在这里插入图片描述"></p><h3 id="2-2-干摩擦力非线性特性"><a href="#2-2-干摩擦力非线性特性" class="headerlink" title="2.2 干摩擦力非线性特性"></a>2.2 干摩擦力非线性特性</h3><p>干摩擦力随相对速度变化具备典型Stribeck特征：</p><ol><li>相对速度为0时，摩擦力达到最大静摩擦力 $F_s$；</li><li>滑块发生相对滑动瞬间，摩擦力骤降为库仑滑动摩擦力 $F_c$；</li><li>随着相对速度继续增大，摩擦力受粘性阻尼作用缓慢上升。</li></ol><p><strong>零速度附近摩擦力负斜率特性</strong>是干摩擦系统产生自激振动的核心能量来源，非线性阻尼会持续向系统输入振动能量。<br><img src="images/fcebbe6d452a4b409d61b7c1829dfd7c.png" alt="在这里插入图片描述"></p><h3 id="2-3-系统动力学运动方程"><a href="#2-3-系统动力学运动方程" class="headerlink" title="2.3 系统动力学运动方程"></a>2.3 系统动力学运动方程</h3><p>为简化理论分析，对系统参数做归一化处理：$m=1，k=1$。<br>滑块受弹簧恢复力 $-\xi$、非线性干摩擦力 $\varphi(\dot{\xi}-v_0)$ 作用，由牛顿第二定律可得系统原始运动微分方程：</p><script type="math/tex; mode=display">\ddot{\xi} + \varphi(\dot{\xi} - v_0) + \xi = 0 \tag{1}</script><p>系统静平衡位置 $\xi_s$ 满足受力平衡条件：</p><script type="math/tex; mode=display">\xi_s = -\varphi(-v_0) \tag{2}</script><p>引入坐标平移变换消除静平衡偏移：令 $x = \xi - \xi_s$，将平衡位置平移至坐标原点，定义等效非线性阻尼函数：</p><script type="math/tex; mode=display">\Phi(y) = \varphi(y - v_0) - \varphi(-v_0),\quad y=\dot{x}</script><p>代入原方程得到以平衡位置为原点的标准振动方程：</p><script type="math/tex; mode=display">\ddot{x} + \Phi(\dot{x}) + x = 0 \tag{3}</script><p>阻尼函数特性：在 $y=0$（低速区间）附近 $\Phi(y)$ 斜率为负，系统表现为<strong>负阻尼</strong>，振动能量持续累积；当速度绝对值较大时，阻尼斜率由负转正，系统正向耗散振动能量。</p><blockquote><p>图3：等效非线性阻尼函数 $\Phi(y)$ 特性曲线</p></blockquote><h2 id="3-相平面分析与稳定极限环机理"><a href="#3-相平面分析与稳定极限环机理" class="headerlink" title="3 相平面分析与稳定极限环机理"></a>3 相平面分析与稳定极限环机理</h2><h3 id="3-1-一阶状态相空间方程"><a href="#3-1-一阶状态相空间方程" class="headerlink" title="3.1 一阶状态相空间方程"></a>3.1 一阶状态相空间方程</h3><p>令状态变量 $x_1=x，x_2=\dot{x}=y$，将二阶微分方程改写为一阶自治微分方程组：</p><script type="math/tex; mode=display">\begin{cases}\displaystyle \frac{dx_1}{dt} = x_2 \\\displaystyle \frac{dx_2}{dt} = -x_1 - \Phi(x_2)\end{cases}</script><p>相轨迹微分形式：</p><script type="math/tex; mode=display">\frac{dy}{dx} = -\frac{x+\Phi(y)}{y} \tag{4}</script><h3 id="3-2-零斜率等倾线与平衡点稳定性"><a href="#3-2-零斜率等倾线与平衡点稳定性" class="headerlink" title="3.2 零斜率等倾线与平衡点稳定性"></a>3.2 零斜率等倾线与平衡点稳定性</h3><p>零斜率等倾线（$dy/dx=0$）满足：</p><script type="math/tex; mode=display">x = -\Phi(y) \tag{5}</script><ol><li>原点附近等倾线分布在一、三象限，平衡点为<strong>不稳定焦点</strong>；微小扰动下相轨迹螺旋向外发散，振动幅值不断增大，负阻尼持续向系统注入能量；</li><li>当振动幅值提升至高速区间，系统切换为正阻尼，振动能量开始耗散；</li><li>能量注入速率与能量耗散速率动态平衡时，相轨迹不再发散或收敛，最终闭合形成<strong>稳定极限环</strong>。</li></ol><blockquote><p>图4：干摩擦系统相平面稳定极限环</p></blockquote><h3 id="3-3-极限环物理含义：粘-滑周期性振荡"><a href="#3-3-极限环物理含义：粘-滑周期性振荡" class="headerlink" title="3.3 极限环物理含义：粘-滑周期性振荡"></a>3.3 极限环物理含义：粘-滑周期性振荡</h3><p>极限环对应机械系统典型<strong>粘滞-滑动（Stick-Slip）</strong>周期性运动：</p><ol><li><strong>粘滞阶段</strong>：滑块与传送带无相对滑动，弹簧持续拉伸积蓄弹性势能；</li><li><strong>滑动触发</strong>：弹簧弹力超过最大静摩擦力，滑块相对传送带发生滑移；</li><li><strong>滑移减速阶段</strong>：库仑摩擦力作用下滑块速度降低，弹簧释放能量；</li><li><strong>再次粘滞</strong>：滑块速度衰减至与传送带同步，再次进入粘滞状态，循环往复形成等幅自激振荡。</li></ol><h2 id="4-MATLAB数值仿真实现"><a href="#4-MATLAB数值仿真实现" class="headerlink" title="4 MATLAB数值仿真实现"></a>4 MATLAB数值仿真实现</h2><h3 id="4-1-Stribeck干摩擦数学模型"><a href="#4-1-Stribeck干摩擦数学模型" class="headerlink" title="4.1 Stribeck干摩擦数学模型"></a>4.1 Stribeck干摩擦数学模型</h3><p>采用工程通用Stribeck摩擦模型表征干摩擦非线性特性，为规避符号函数 $\text{sgn}(v)$ 在零速度处不连续导致的数值奇异，使用 $\tanh(\alpha v)$ 平滑近似符号函数：</p><script type="math/tex; mode=display">\varphi(v) = F_c \tanh(\alpha v) + (F_s-F_c)e^{-(v/v_s)^2}\tanh(\alpha v) + \sigma v</script><h4 id="仿真参数配置表"><a href="#仿真参数配置表" class="headerlink" title="仿真参数配置表"></a>仿真参数配置表</h4><div class="table-container"><table><thead><tr><th>参数</th><th>物理含义</th><th>取值</th></tr></thead><tbody><tr><td>$F_c$</td><td>库仑滑动摩擦力</td><td>0.4</td></tr><tr><td>$F_s$</td><td>最大静摩擦力</td><td>0.8</td></tr><tr><td>$v_s$</td><td>Stribeck特征速度</td><td>0.2</td></tr><tr><td>$\sigma$</td><td>粘性摩擦系数</td><td>0.05</td></tr><tr><td>$\alpha$</td><td>零速度平滑系数</td><td>100</td></tr><tr><td>$v_0$</td><td>传送带匀速运行速度</td><td>0.8</td></tr></tbody></table></div><h3 id="4-2-完整MATLAB仿真代码"><a href="#4-2-完整MATLAB仿真代码" class="headerlink" title="4.2 完整MATLAB仿真代码"></a>4.2 完整MATLAB仿真代码</h3><figure class="highlight matlab"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">%% 单自由度干摩擦自振系统极限环 (教材模型)</span></span><br><span class="line">clear; clc; close all;</span><br><span class="line"></span><br><span class="line"><span class="comment">% ---------- 参数 ----------</span></span><br><span class="line">m = <span class="number">1</span>;          <span class="comment">% 质量</span></span><br><span class="line">k = <span class="number">1</span>;          <span class="comment">% 弹簧刚度</span></span><br><span class="line">v0 = <span class="number">0.8</span>;       <span class="comment">% 平台速度</span></span><br><span class="line"></span><br><span class="line"><span class="comment">% 摩擦力参数 (Stribeck)</span></span><br><span class="line">Fc = <span class="number">0.4</span>;       <span class="comment">% 库仑摩擦</span></span><br><span class="line">Fs = <span class="number">0.8</span>;       <span class="comment">% 静摩擦</span></span><br><span class="line">vs = <span class="number">0.2</span>;       <span class="comment">% Stribeck速度</span></span><br><span class="line">sigma = <span class="number">0.05</span>;   <span class="comment">% 粘性系数</span></span><br><span class="line">alpha = <span class="number">100</span>;     <span class="comment">% tanh平滑因子</span></span><br><span class="line"></span><br><span class="line"><span class="comment">% 摩擦力函数 phi(v)</span></span><br><span class="line">phi = @(v) Fc*<span class="built_in">tanh</span>(alpha*v) + (Fs-Fc)*<span class="built_in">exp</span>(-(v/vs).^<span class="number">2</span>).*<span class="built_in">tanh</span>(alpha*v) + sigma*v;</span><br><span class="line"></span><br><span class="line"><span class="comment">% 定义 Phi(y) = phi(y - v0) - phi(-v0)</span></span><br><span class="line">Phi = @(y) phi(y - v0) - phi(-v0);</span><br><span class="line"></span><br><span class="line"><span class="comment">% ---------- 状态方程 (x1 = x, x2 = y = dx/dt) ----------</span></span><br><span class="line"><span class="comment">% 方程: dx1/dt = x2, dx2/dt = -x1 - Phi(x2)</span></span><br><span class="line">odefun = @(t, z) [z(<span class="number">2</span>); -z(<span class="number">1</span>) - Phi(z(<span class="number">2</span>))];</span><br><span class="line"></span><br><span class="line"><span class="comment">% ---------- 仿真设置 ----------</span></span><br><span class="line">Tsim = <span class="number">100</span>;         <span class="comment">% 足够长，进入稳态</span></span><br><span class="line">dt = <span class="number">0.001</span>;</span><br><span class="line">tspan = <span class="number">0</span>:dt:Tsim;</span><br><span class="line">z0 = [<span class="number">0.45</span>; <span class="number">0.45</span>];    <span class="comment">% 小扰动 (原点不稳定，将发散到极限环)</span></span><br><span class="line"></span><br><span class="line">options = odeset(<span class="string">&#x27;RelTol&#x27;</span>, <span class="number">1e-6</span>, <span class="string">&#x27;AbsTol&#x27;</span>, <span class="number">1e-8</span>, <span class="string">&#x27;MaxStep&#x27;</span>, dt);</span><br><span class="line">[t, Z] = ode45(odefun, tspan, z0, options);   <span class="comment">% 此处可用ode45，因为非刚性</span></span><br><span class="line"></span><br><span class="line"><span class="comment">% 提取变量</span></span><br><span class="line">x = Z(:,<span class="number">1</span>);</span><br><span class="line">y = Z(:,<span class="number">2</span>);    <span class="comment">% 速度</span></span><br><span class="line"></span><br><span class="line"><span class="comment">% ---------- 绘图 ----------</span></span><br><span class="line"></span><br><span class="line"><span class="comment">% 图1：相平面 (x vs y)</span></span><br><span class="line"><span class="built_in">figure</span>(<span class="string">&#x27;Name&#x27;</span>, <span class="string">&#x27;相平面极限环&#x27;</span>);</span><br><span class="line"><span class="built_in">plot</span>(x, y, <span class="string">&#x27;b-&#x27;</span>, <span class="string">&#x27;LineWidth&#x27;</span>, <span class="number">1.5</span>);</span><br><span class="line">xlabel(<span class="string">&#x27;位移 x&#x27;</span>);</span><br><span class="line">ylabel(<span class="string">&#x27;速度 y = \dot&#123;x&#125;&#x27;</span>);</span><br><span class="line">title(<span class="string">&#x27;干摩擦自振系统极限环&#x27;</span>);</span><br><span class="line">grid on; axis equal; <span class="built_in">hold</span> on;</span><br><span class="line"><span class="built_in">plot</span>(x(<span class="number">1</span>), y(<span class="number">1</span>), <span class="string">&#x27;ro&#x27;</span>, <span class="string">&#x27;MarkerSize&#x27;</span>, <span class="number">8</span>, <span class="string">&#x27;LineWidth&#x27;</span>, <span class="number">2</span>);</span><br><span class="line"><span class="built_in">legend</span>(<span class="string">&#x27;相轨迹&#x27;</span>, <span class="string">&#x27;起始点&#x27;</span>);</span><br><span class="line"><span class="built_in">hold</span> off;</span><br><span class="line"></span><br><span class="line"><span class="comment">% 图2：摩擦力曲线 Phi(y) 与零等倾线</span></span><br><span class="line"><span class="built_in">figure</span>(<span class="string">&#x27;Name&#x27;</span>, <span class="string">&#x27;摩擦力特性&#x27;</span>);</span><br><span class="line"><span class="comment">% 绘制理论曲线 Phi(y)</span></span><br><span class="line">y_plot = <span class="built_in">linspace</span>(<span class="number">-2</span>, <span class="number">2</span>, <span class="number">300</span>);</span><br><span class="line">Phi_plot = Phi(y_plot);</span><br><span class="line"><span class="built_in">plot</span>(y_plot, Phi_plot, <span class="string">&#x27;r-&#x27;</span>, <span class="string">&#x27;LineWidth&#x27;</span>, <span class="number">1.5</span>);</span><br><span class="line">xlabel(<span class="string">&#x27;速度 y&#x27;</span>);</span><br><span class="line">ylabel(<span class="string">&#x27;\Phi(y)&#x27;</span>);</span><br><span class="line">title(<span class="string">&#x27;非线性阻尼函数 \Phi(y)&#x27;</span>);</span><br><span class="line">grid on;</span><br><span class="line"><span class="built_in">hold</span> off;</span><br><span class="line"></span><br><span class="line"><span class="comment">% 图3：时间响应 (可选)</span></span><br><span class="line"><span class="built_in">figure</span>(<span class="string">&#x27;Name&#x27;</span>, <span class="string">&#x27;时间响应&#x27;</span>);</span><br><span class="line">subplot(<span class="number">2</span>,<span class="number">1</span>,<span class="number">1</span>);</span><br><span class="line"><span class="built_in">plot</span>(t, x, <span class="string">&#x27;b-&#x27;</span>);</span><br><span class="line">xlabel(<span class="string">&#x27;时间 (s)&#x27;</span>); ylabel(<span class="string">&#x27;位移 x&#x27;</span>);</span><br><span class="line">title(<span class="string">&#x27;位移响应&#x27;</span>); grid on;</span><br><span class="line"></span><br><span class="line">subplot(<span class="number">2</span>,<span class="number">1</span>,<span class="number">2</span>);</span><br><span class="line"><span class="built_in">plot</span>(t, y, <span class="string">&#x27;r-&#x27;</span>);</span><br><span class="line">xlabel(<span class="string">&#x27;时间 (s)&#x27;</span>); ylabel(<span class="string">&#x27;速度 y&#x27;</span>);</span><br><span class="line">title(<span class="string">&#x27;速度响应&#x27;</span>); grid on;</span><br><span class="line"></span><br></pre></td></tr></table></figure><h3 id="4-3-仿真结果分析"><a href="#4-3-仿真结果分析" class="headerlink" title="4.3 仿真结果分析"></a>4.3 仿真结果分析</h3><ol><li><strong>相平面极限环结果</strong>：系统从微小初始扰动出发，相轨迹由内向外螺旋发散，最终收敛至闭合曲线，形成<strong>全局稳定极限环</strong>。<br><img src="images/e36c724008f44d2db1949ce635cf1104.png" alt="在这里插入图片描述"></li><li><p><strong>非线性阻尼特性</strong>：$\Phi(y)$ 在零速度附近斜率为负，负阻尼持续激励系统振动；高速区间阻尼转正，限制振幅无限增大，能量动态平衡是极限环产生的根本原因。<br><img src="images/d3200e9f0c6b40a78feea96d660deaf1.png" alt="在这里插入图片描述"></p></li><li><p><strong>时域响应特性</strong>：位移、速度时序曲线经过短暂过渡过程后变为等幅周期振荡，无衰减、无发散，对应机械结构持续低频自激振动。<br><img src="images/dabd1ac6e72e42fcb00d0f86649b2ef2.png" alt="在这里插入图片描述"></p></li></ol>]]></content>
+      
+      
+      <categories>
+          
+          <category> 动力学仿真 </category>
+          
+          <category> 机械振动 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 非线性振动 </tag>
+            
+            <tag> 干摩擦自振 </tag>
+            
+            <tag> 极限环 </tag>
+            
+            <tag> MATLAB仿真 </tag>
+            
+            <tag> Stribeck摩擦模型 </tag>
             
         </tags>
       
