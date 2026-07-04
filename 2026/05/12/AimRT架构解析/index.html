@@ -1,0 +1,874 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>AimRT架构解析 | BeichenZhuo的Blog</title><meta name="author" content="BeichenZhuo"><meta name="copyright" content="BeichenZhuo"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="智元机器人开源的新一代机器人运行时框架AimRT架构解析，涵盖Core内核、Module模块、Executor调度器、Channel与RPC通信体系等核心组件">
+<meta property="og:type" content="article">
+<meta property="og:title" content="AimRT架构解析">
+<meta property="og:url" content="https://beichenzhuo.github.io/2026/05/12/AimRT%E6%9E%B6%E6%9E%84%E8%A7%A3%E6%9E%90/index.html">
+<meta property="og:site_name" content="BeichenZhuo的Blog">
+<meta property="og:description" content="智元机器人开源的新一代机器人运行时框架AimRT架构解析，涵盖Core内核、Module模块、Executor调度器、Channel与RPC通信体系等核心组件">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://beichenzhuo.github.io/img/dog-icon.png">
+<meta property="article:published_time" content="2026-05-12T15:02:11.000Z">
+<meta property="article:modified_time" content="2026-07-01T16:25:52.237Z">
+<meta property="article:author" content="BeichenZhuo">
+<meta property="article:tag" content="AimRT">
+<meta property="article:tag" content="实时系统">
+<meta property="article:tag" content="机器人框架">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://beichenzhuo.github.io/img/dog-icon.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "AimRT架构解析",
+  "url": "https://beichenzhuo.github.io/2026/05/12/AimRT%E6%9E%B6%E6%9E%84%E8%A7%A3%E6%9E%90/",
+  "image": "https://beichenzhuo.github.io/img/dog-icon.png",
+  "datePublished": "2026-05-12T15:02:11.000Z",
+  "dateModified": "2026-07-01T16:25:52.237Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "BeichenZhuo",
+      "url": "https://BeichenZhuo.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://beichenzhuo.github.io/2026/05/12/AimRT%E6%9E%B6%E6%9E%84%E8%A7%A3%E6%9E%90/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.5"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":-1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'AimRT架构解析',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><style>
+  /* 导航栏透明置顶，最高层级 */
+  #nav {
+    background: transparent !important;
+    position: relative;
+    z-index: 99;
+  }
+  /* 首屏拉至95vh，高度远大于iframe，实现超长顶部区域 */
+  #page-header {
+    position: relative !important;
+    width: 100% !important;
+    height: 95vh !important;
+    background: transparent !important;
+    overflow: hidden !important;
+  }
+  /* 仿真画面在超长容器内居中，保证不变形，上下自然留白 */
+  .full-header-iframe {
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 100%;
+    border: none !important;
+    z-index: 1 !important;
+    opacity: 0.9;
+    object-fit: cover;
+  }
+  /* 标题居中悬浮在画面上层 */
+  #site-info {
+    position: relative !important;
+    z-index: 2 !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: transparent !important;
+  }
+  .title-mask {
+    padding: 30px 50px;
+    background: rgba(0,0,0,0.35);
+    border-radius: 16px;
+    text-align: center;
+  }
+  #site-title {
+    color: #fff !important;
+    font-size: 44px;
+    margin: 0;
+  }
+  #site-subtitle {
+    color: #fff !important;
+    margin-top: 12px;
+    font-size: 19px;
+  }
+  /* 隐藏向下滚动箭头 */
+  .scroll-down {
+    display: none !important;
+  }
+  /* 移动端适配 */
+  @media (max-width: 768px) {
+    #page-header {
+      height: 85vh !important;
+    }
+    #site-title {
+      font-size: 30px;
+    }
+  }
+</style>
+<meta name="generator" content="Hexo 8.1.2"></head><body><div class="bg-animation" id="web_bg" style="background: [object Object];"></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">BeichenZhuo的Blog</span></a><a class="nav-page-title" href="/"><span class="site-name">AimRT架构解析</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div></div></nav><div id="post-info"><h1 class="post-title">AimRT架构解析</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-05-12T15:02:11.000Z" title="发表于 2026-05-12 23:02:11">2026-05-12</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-07-01T16:25:52.237Z" title="更新于 2026-07-02 00:25:52">2026-07-02</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="AimRT-架构解析"><a href="#AimRT-架构解析" class="headerlink" title="AimRT 架构解析"></a>AimRT 架构解析</h1><h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>机器人与工业运动控制场景中，框架选型始终存在一对核心矛盾：既要支持算法快速迭代的开发灵活性，又要满足量产所需的<strong>硬实时、高稳定、低资源开销</strong>。</p>
+<p>传统 ROS2 生态丰富、适合原型研发，但架构天生偏向科研场景，存在线程调度混乱、DDS 通信冗余、模块耦合重、资源开销臃肿、云边协同能力弱等量产短板，很难胜任高精度伺服控制、大规模分布式机器人的工业化落地。</p>
+<p><strong>AimRT</strong> 是智元机器人开源的新一代机器人运行时框架，基于 C++20 现代 C++ 特性构建，主打<strong>轻量高效、确定性实时、插件化解耦、云边端统一、可量产</strong>。它重构了机器人系统的生命周期管理、任务调度、跨进程通信与异步编程模型，精准解决 ROS2 的量产痛点，现已广泛应用于人形机器人、工业机械臂。</p>
+<h2 id="一、整体架构总览"><a href="#一、整体架构总览" class="headerlink" title="一、整体架构总览"></a>一、整体架构总览</h2><p>AimRT 采用<strong>内核驱动 + 分层解耦 + 可插拔扩展</strong>的架构设计，严格遵循单一职责、依赖注入、配置驱动、异步优先四大原则。各组件边界清晰、互不侵入，具备极强的可维护性与扩展性。</p>
+<p>整体架构分层与依赖关系如下：</p>
+<pre><code class="highlight mermaid">graph TB
+    %% 内核层：全局唯一管控中心
+    subgraph 框架内核层
+        Core[&quot;Core 全局核心管理器生命周期/配置/插件统一管控&quot;]
+    end
+
+    %% 基础运行时组件：框架核心能力
+    subgraph 运行时基础组件层
+        Executor[&quot;Executor 任务执行器全局任务调度、实时性保障&quot;]
+        Channel[&quot;Channel 发布订阅组件数据流单向分发&quot;]
+        RPC[&quot;RPC 请求响应组件指令双向交互&quot;]
+    end
+
+    %% 业务承载层：落地具体功能
+    subgraph 业务应用层
+        Module[&quot;Module 业务模块最小业务逻辑单元&quot;]
+        Pkg[&quot;Pkg 动态库包模块物理部署载体&quot;]
+    end
+
+    %% 严格依赖关系
+    Core ---&gt;|统一初始化/管控| Executor
+    Core ---&gt;|统一初始化/管控| Channel
+    Core ---&gt;|统一初始化/管控| RPC
+    Core ---&gt;|生命周期管理| Module
+    
+    Pkg ---&gt;|动态承载、打包| Module
+    Module ---&gt;|依赖注入调用| Executor
+    Module ---&gt;|依赖注入调用| Channel
+    Module ---&gt;|依赖注入调用| RPC
+</code></pre>
+<p>核心设计思想：</p>
+<ol>
+<li><p><strong>职责隔离</strong>：调度、通信、业务三层能力完全解耦，各司其职，避免逻辑混杂；</p>
+</li>
+<li><p><strong>全局统一管控</strong>：单例 Core 统筹所有组件启停与资源管理，杜绝时序混乱与内存泄漏；</p>
+</li>
+<li><p><strong>动态部署</strong>：业务以动态库 Pkg 形式打包，支持运行时加载、按需启停、版本迭代；</p>
+</li>
+<li><p><strong>可插拔通信</strong>：底层通信后端可通过配置一键切换，业务代码无需改动，适配多场景部署。</p>
+</li>
+</ol>
+<h2 id="二、Core：框架全局内核与资源总管"><a href="#二、Core：框架全局内核与资源总管" class="headerlink" title="二、Core：框架全局内核与资源总管"></a>二、Core：框架全局内核与资源总管</h2><p><strong>Core 是 AimRT 全局唯一的核心管控实例</strong>，是整个框架的启动入口与资源中枢，全权负责生命周期调度、配置解析、插件管理与资源注入，是系统实时性与稳定性的底层基石。</p>
+<pre><code class="highlight mermaid">graph LR
+    subgraph Core 内置核心子模块
+        ConfigMgr[&quot;配置管理TOML解析、全局配置分发&quot;]
+        PluginMgr[&quot;插件管理通信/调度插件加载切换&quot;]
+        ExecMgr[&quot;执行器管理全局Executor实例维护&quot;]
+        LogMgr[&quot;日志管理统一日志输出与分级&quot;]
+        ChannelMgr[&quot;Channel通信管理话题发布订阅调度&quot;]
+        RPCMgr[&quot;RPC服务管理服务注册与请求分发&quot;]
+        ModuleMgr[&quot;模块管理Module生命周期管控&quot;]
+    end
+
+    %% 框架生命周期时序
+    Init[&quot;Initialize 全局初始化&quot;] --&gt; Start[&quot;Start 启动运行&quot;]
+    Start --&gt; Shutdown[&quot;Shutdown 优雅销毁&quot;]
+
+    %% 启动阶段资源调度
+    Init --&gt; ExecMgr
+    Init --&gt; ChannelMgr
+    Init --&gt; RPCMgr
+    Init --&gt; ModuleMgr
+</code></pre>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>核心职责</th>
+<th>详细说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>全生命周期管控</td>
+<td>统一调度所有组件与业务模块的初始化、启动、运行、优雅退出，规避启停混乱、任务残留、资源泄漏等问题</td>
+</tr>
+<tr>
+<td>配置驱动管理</td>
+<td>全局解析 TOML 配置，自动分发调度策略、通信后端、模块参数，实现配置与代码解耦</td>
+</tr>
+<tr>
+<td>统一资源注入</td>
+<td>通过 CoreRef 对外提供标准化资源句柄，业务无需手动创建线程、通信实例</td>
+</tr>
+<tr>
+<td>插件热管理</td>
+<td>支持动态加载、切换通信与调度插件，无缝适配单机实时、分布式组网、云边协同场景</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>AimRT 采用依赖注入模式，禁止业务直接依赖全局 Core 对象。框架通过 <strong>CoreRef 只读引用</strong> 将调度、通信、日志等资源统一注入模块，彻底隔离业务层与底层框架实现，极大提升代码可移植性与可维护性。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">bool</span> <span class="title">MyModule::Initialize</span><span class="params">(aimrt::CoreRef core)</span> </span>&#123;</span><br><span class="line">    core_ = core;</span><br><span class="line">    <span class="comment">// 获取全局执行器</span></span><br><span class="line">    <span class="keyword">auto</span> exe = core.<span class="built_in">GetExecutorManager</span>().<span class="built_in">GetExecutor</span>(<span class="string">&quot;work_executor&quot;</span>);</span><br><span class="line">    <span class="comment">// 获取话题发布句柄</span></span><br><span class="line">    <span class="keyword">auto</span> pub = core.<span class="built_in">GetChannelHandle</span>().<span class="built_in">GetPublisher</span>&lt;MsgType&gt;(<span class="string">&quot;sensor_topic&quot;</span>);</span><br><span class="line">    <span class="comment">// 获取RPC客户端句柄</span></span><br><span class="line">    <span class="keyword">auto</span> client = core.<span class="built_in">GetRpcHandle</span>().<span class="built_in">GetClient</span>&lt;Req, Resp&gt;(<span class="string">&quot;control_service&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>该机制下，底层框架升级、插件替换、策略调整均不会侵入业务代码，非常适合长期迭代与量产维护。</p>
+<h2 id="三、Module-amp-Pkg：业务最小单元与部署载体"><a href="#三、Module-amp-Pkg：业务最小单元与部署载体" class="headerlink" title="三、Module \&amp; Pkg：业务最小单元与部署载体"></a>三、Module \&amp; Pkg：业务最小单元与部署载体</h2><h3 id="3-1-Module：标准化业务逻辑原子"><a href="#3-1-Module：标准化业务逻辑原子" class="headerlink" title="3.1 Module：标准化业务逻辑原子"></a>3.1 Module：标准化业务逻辑原子</h3><p><strong>Module 是 AimRT 唯一的业务最小承载单元</strong>，所有传感器解析、运动控制、算法推理、设备驱动等业务，均需封装为独立 Module。框架为 Module 提供统一生命周期，由 Core 严格调度管控。</p>
+<pre><code class="highlight mermaid">stateDiagram-v2
+    direction LR
+    [*] --&gt; Initialize: 初始化资源、解析配置
+    Initialize --&gt; Start: 启动任务、执行业务
+    Start --&gt; Running: 正常调度运行
+    Running --&gt; Shutdown: 停止任务、释放资源
+    Shutdown --&gt; [*]: 模块销毁
+</code></pre>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">MyModule</span> : <span class="keyword">public</span> aimrt::ModuleBase &#123;</span><br><span class="line"> <span class="keyword">public</span>:</span><br><span class="line">  <span class="function"><span class="type">bool</span> <span class="title">Initialize</span><span class="params">(aimrt::CoreRef core)</span> <span class="keyword">override</span></span>;</span><br><span class="line">  <span class="function"><span class="type">bool</span> <span class="title">Start</span><span class="params">()</span> <span class="keyword">override</span></span>;</span><br><span class="line">  <span class="function"><span class="type">void</span> <span class="title">Shutdown</span><span class="params">()</span> <span class="keyword">override</span></span>;</span><br><span class="line"></span><br><span class="line"> <span class="keyword">private</span>:</span><br><span class="line">  aimrt::CoreRef core_;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h3 id="3-2-Pkg：工程化动态部署单元"><a href="#3-2-Pkg：工程化动态部署单元" class="headerlink" title="3.2 Pkg：工程化动态部署单元"></a>3.2 Pkg：工程化动态部署单元</h3><p>Pkg 是 Module 的物理部署载体，编译后生成跨平台动态库（.so/.dll），支持模块化打包、动态加载、版本管理，适配工业化部署规范。一个 Pkg 可聚合多个关联 Module，通过标准接口暴露模块实例，框架可按配置顺序自动初始化与启动，精准管控多模块时序依赖。</p>
+<h2 id="四、Executor：任务调度核心（实时性基石）"><a href="#四、Executor：任务调度核心（实时性基石）" class="headerlink" title="四、Executor：任务调度核心（实时性基石）"></a>四、Executor：任务调度核心（实时性基石）</h2><p>Executor 是 AimRT <strong>调度确定性、线程安全性、系统实时性的核心保障</strong>，彻底解决 ROS2 线程泛滥、调度无序、抖动不可控、上下文频繁切换等量产痛点。AimRT 所有执行器均基于原生线程/线程池实现，协程仅为上层异步编码语法，最终所有任务均由 Executor 真实调度执行。</p>
+<h3 id="4-1-七大官方执行器全维度详解"><a href="#4-1-七大官方执行器全维度详解" class="headerlink" title="4.1 七大官方执行器全维度详解"></a>4.1 七大官方执行器全维度详解</h3><p>AimRT 内置七类场景化执行器，全覆盖 IO 并发、CPU 计算、硬实时定时、串行控制、后台运维、系统启动等机器人业务场景，实现精细化、确定性调度。</p>
+<p><strong>1. asio_thread 执行器</strong></p>
+<p>基于 Boost.Asio 线程池实现，是 AimRT 最通用的基础并发执行器。内部维护可配置数量的常驻线程，支持任务均衡分发、高精度定时器、IO 事件监听，IO 密集型任务吞吐性能优异。主打多线程并发提速，不保证任务顺序，多线程场景需业务自行保证数据互斥。同时作为 asio_strand 的底层线程底座，是整个调度体系的基础。适用于日志上报、大数据传输、IO 轮询、通用异步任务。</p>
+<p><strong>2. asio_strand 执行器</strong></p>
+<p>挂靠 asio_thread 线程池的轻量化串行调度器，无独立线程、零额外开销。依托 Asio 串行队列机制，强制任务严格 FIFO 执行，底层多线程环境下同一时刻仅运行单个任务，天然线程安全、无需手动加锁。非常适合跨模块业务流水线、高精度运动控制、状态机流转等对时序与顺序一致性要求极高的核心业务，是工业控制确定性调度的关键能力。</p>
+<p><strong>3. tbb_thread 执行器</strong></p>
+<p>基于 Intel TBB 工作窃取线程池实现，区别于传统固定线程池，空闲线程会主动窃取繁忙线程任务，实现全自动 CPU 负载均衡。针对图像预处理、矩阵运算、批量推理、分片计算等 CPU 密集型场景深度优化，长短任务均可自适应调度，最大化挖掘多核算力，是感知与 AI 算法模块的最优执行器。</p>
+<p><strong>4. simple_thread 执行器</strong></p>
+<p>极简独立单线程执行器，所有任务串行运行，架构简单、资源占用极低、无线程竞争。但能力单一，不支持高精度定时与复杂队列调度，无并发能力。仅适用于逻辑简单、低频执行的后台轻量常驻任务，严禁用于控制、感知、算法核心链路。</p>
+<p><strong>5. time_wheel 执行器</strong></p>
+<p>基于高精度时间轮算法的硬实时定时组件，核心特性为<strong>只计时、不执行</strong>。计时周期到达后，将任务投递至业务执行器完成调度执行，有效规避传统定时器抖动大、精度差的问题，可稳定支撑 1ms/10ms 级周期任务，广泛用于伺服控制、状态轮询、超时监控等硬实时场景。</p>
+<p><strong>6. main_thread 执行器</strong></p>
+<p>绑定进程主线程的任务队列，所有任务串行执行，无并发冲突与上下文切换。仅用于框架全局初始化、资源注册、系统启停等底层系统任务，禁止执行业务逻辑与耗时阻塞任务，保障框架基础服务稳定。</p>
+<p><strong>7. guard_thread 执行器</strong></p>
+<p>独立后台守护线程，完全隔离于核心业务线程。专门承载心跳检测、状态巡检、异常上报、后台统计、进程保活等运维任务，运维任务阻塞与卡顿不会影响控制、感知等核心业务的实时性，大幅提升系统容错与稳定性。</p>
+<h2 id="五、通信体系：Channel-数据流与-RPC-指令交互"><a href="#五、通信体系：Channel-数据流与-RPC-指令交互" class="headerlink" title="五、通信体系：Channel 数据流与 RPC 指令交互"></a>五、通信体系：Channel 数据流与 RPC 指令交互</h2><p>AimRT 构建了<strong>统一可插拔通信体系</strong>，彻底解决 ROS2 单一 DDS 协议延迟高、拷贝多、组网僵硬、实时性差的问题。整套通信能力分为 Channel 数据流广播与 RPC 请求应答两类模式，分工互补，覆盖机器人全部数据交互场景，且底层协议可配置切换、业务代码零改动。</p>
+<h3 id="5-1-Channel-与-RPC-差异化定位"><a href="#5-1-Channel-与-RPC-差异化定位" class="headerlink" title="5.1 Channel 与 RPC 差异化定位"></a>5.1 Channel 与 RPC 差异化定位</h3><p>两种通信模式面向完全不同的业务模型，适配数据流与指令流两类核心场景：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>对比维度</th>
+<th>Channel（发布订阅）</th>
+<th>RPC（请求响应）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>通信模式</td>
+<td>单向广播、多对多数据流解耦</td>
+<td>双向应答、一对一指令交互</td>
+</tr>
+<tr>
+<td>执行特性</td>
+<td>发布即返回、无阻塞、无需等待对端</td>
+<td>支持协程挂起等待、可获取执行结果与状态</td>
+</tr>
+<tr>
+<td>典型场景</td>
+<td>雷达、相机、IMU 传感器数据流、设备状态周期上报</td>
+<td>伺服控制、参数配置、设备启停、指令查询交互</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3 id="5-2-统一通信核心特性"><a href="#5-2-统一通信核心特性" class="headerlink" title="5.2 统一通信核心特性"></a>5.2 统一通信核心特性</h3><p>AimRT 通信体系具备架构级统一优势：业务完全解耦、底层可插拔替换、能力可扩展、生命周期统一管控。Channel 支持消息 Filter 链式预处理，RPC 支持超时、重试、异步/协程等待等丰富策略，所有通信句柄由 Core 统一管理，杜绝资源泄漏。</p>
+<h3 id="5-3-三大可插拔通信后端"><a href="#5-3-三大可插拔通信后端" class="headerlink" title="5.3 三大可插拔通信后端"></a>5.3 三大可插拔通信后端</h3><p>AimRT 原生支持三套通信插件，按需适配单机实时、分布式组网、生态调试三类场景：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>通信后端</th>
+<th>适用场景</th>
+<th>核心优势</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Iceoryx</td>
+<td>单机多进程硬实时通信</td>
+<td>共享内存真零拷贝、微秒级延迟、无运行期动态内存分配，无随机卡顿，适配高频伺服控制场景</td>
+</tr>
+<tr>
+<td>Zenoh</td>
+<td>多机组网、跨网段、云边协同</td>
+<td>协议轻量化、带宽开销低、组网灵活，全方位替代传统笨重 DDS，适配分布式机器人集群</td>
+</tr>
+<tr>
+<td>DDS(FastDDS)</td>
+<td>ROS2 生态兼容与调试</td>
+<td>原生对接 Rviz、rosbag、ROS 功能包，仅用于开发调试与生态兼容，不做主流量实时通信</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id="六、C-20-协程：告别回调地狱的异步范式"><a href="#六、C-20-协程：告别回调地狱的异步范式" class="headerlink" title="六、C++20 协程：告别回调地狱的异步范式"></a>六、C++20 协程：告别回调地狱的异步范式</h2><h3 id="6-1-协程核心定位"><a href="#6-1-协程核心定位" class="headerlink" title="6.1 协程核心定位"></a>6.1 协程核心定位</h3><p>AimRT 基于 <strong>C++20 无栈协程</strong> 构建异步业务体系，区别于 ROS2 传统回调嵌套模式与 Go 有栈协程。依托编译器状态机+堆协程帧实现，复用线程栈、挂起清空栈帧，无栈溢出风险，支持数万级轻量并发，是现代机器人异步业务的最优编码范式。</p>
+<h3 id="6-2-协程与-Executor-协作原理"><a href="#6-2-协程与-Executor-协作原理" class="headerlink" title="6.2 协程与 Executor 协作原理"></a>6.2 协程与 Executor 协作原理</h3><p>协程是<strong>上层异步语法糖</strong>，Executor 是<strong>底层真实调度载体</strong>，二者通过 AimRTScheduler 绑定联动：</p>
+<pre><code class="highlight mermaid">sequenceDiagram
+    participant Coro as C++20 协程（业务语法层）
+    participant Scheduler as AimRTScheduler（桥梁层）
+    participant Exec as Executor（调度执行层）
+
+    Coro-&gt;&gt;Scheduler: co_await 挂起异步逻辑
+    Scheduler-&gt;&gt;Exec: 封装恢复任务，提交调度
+    Scheduler--&gt;&gt;Coro: 协程挂起，释放线程
+    Exec-&gt;&gt;Exec: 执行任务、等待异步事件
+    Exec--&gt;&gt;Scheduler: 事件就绪，触发恢复
+    Scheduler--&gt;&gt;Coro: 协程恢复，继续执行后续逻辑
+</code></pre>
+<p>Executor 负责线程调度与任务执行，协程负责将碎片化回调逻辑改写为线性同步代码，兼顾开发效率与运行性能。</p>
+<h3 id="6-3-协程工程价值与代码示例"><a href="#6-3-协程工程价值与代码示例" class="headerlink" title="6.3 协程工程价值与代码示例"></a>6.3 协程工程价值与代码示例</h3><p>协程彻底解决 ROS2 多层回调嵌套、代码割裂、难以维护的问题，让异步流水线顺序编写、线性阅读：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">co::Task&lt;<span class="type">void</span>&gt; <span class="title">RobotControlPipeline</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 线性顺序执行，无嵌套、不阻塞线程</span></span><br><span class="line">    <span class="keyword">auto</span> joint_state = <span class="keyword">co_await</span> <span class="built_in">GetJointState</span>();   <span class="comment">// 等待关节状态</span></span><br><span class="line">    <span class="function"><span class="keyword">co_await</span> <span class="title">MoveJoint</span><span class="params">(joint_state.target_pose)</span></span>;  <span class="comment">// 执行运动指令</span></span><br><span class="line">    <span class="function"><span class="keyword">co_await</span> <span class="title">WaitArrive</span><span class="params">()</span></span>;                        <span class="comment">// 等待到位</span></span><br><span class="line">    <span class="function"><span class="keyword">co_await</span> <span class="title">GraspOperation</span><span class="params">()</span></span>;                    <span class="comment">// 执行抓取动作</span></span><br><span class="line">    <span class="keyword">co_return</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="七、DynamicLatch：高性能异步同步工具"><a href="#七、DynamicLatch：高性能异步同步工具" class="headerlink" title="七、DynamicLatch：高性能异步同步工具"></a>七、DynamicLatch：高性能异步同步工具</h2><p><code>DynamicLatch</code> 是 AimRT 自研的<strong>无锁异步同步工具</strong>，用于解决「动态批量提交异步任务并等待全部完成」的场景，能力优于 C++20 标准 <code>std::latch</code>，支持动态增减计数、关闭锁止、高并发无锁调度。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 批量异步任务等待标准用法</span></span><br><span class="line">aimrt::util::DynamicLatch latch;</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; <span class="number">1000</span>; i++) &#123;</span><br><span class="line">    executor.<span class="built_in">TryExecute</span>(latch, []()&#123;</span><br><span class="line">        <span class="comment">// 批量异步业务任务</span></span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">latch.<span class="built_in">CloseAndWait</span>(); <span class="comment">// 禁止新增任务并阻塞等待全部完成</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="八、全链路启动与运行时序"><a href="#八、全链路启动与运行时序" class="headerlink" title="八、全链路启动与运行时序"></a>八、全链路启动与运行时序</h2><p>AimRT 拥有严格可控的全局启停时序，彻底规避 ROS2 启动混乱、任务乱序问题：</p>
+<pre><code class="highlight mermaid">sequenceDiagram
+    autonumber
+    participant Main as 主程序
+    participant Core as AimRT Core内核
+    participant Pkg as 动态库Pkg
+    participant Module as 业务Module
+    participant Exec as 执行器
+
+    Main-&gt;&gt;Core: 执行全局Initialize()
+    Core-&gt;&gt;Pkg: 动态加载所有业务Pkg
+    Pkg--&gt;&gt;Core: 导出并创建Module实例
+    Core-&gt;&gt;Module: 执行模块Initialize()初始化
+    Core-&gt;&gt;Exec: 启动所有Executor线程池
+    Core-&gt;&gt;Module: 执行模块Start()启动业务
+    Note over Main,Exec: 系统实时运行、调度通信、执行业务逻辑
+    Main-&gt;&gt;Core: 触发全局Shutdown()
+    Core-&gt;&gt;Module: 执行模块Shutdown()停止业务
+    Core-&gt;&gt;Exec: 停止任务调度、回收线程资源
+</code></pre>
+<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>AimRT 并非简单的 ROS2 替代品，而是一套<strong>面向工业量产、从底层重构的现代化机器人运行时架构</strong>，从设计根源解决了 ROS2 偏向科研原型、不适配工业落地的核心短板。</p>
+<p>相较于 ROS2，AimRT 优势全方位覆盖量产核心需求：</p>
+<p><strong>调度层面</strong>，ROS2 依赖用户手动管理线程，极易出现线程泛滥、调度无序、抖动不可控的问题，无法支撑毫秒级硬实时控制；而 AimRT 通过七类精细化执行器实现场景化、确定性调度，严格区分并发、串行、定时、运维任务，从底层保障运动控制的时序稳定性。</p>
+<p><strong>通信层面</strong>，ROS2 单一依赖 DDS，拷贝冗余、延迟偏高、组网笨重；AimRT 采用可插拔通信架构，结合 Iceoryx 零拷贝实时通信与 Zenoh 轻量化分布式组网，同时兼容 DDS 生态调试，兼顾极致性能与生态兼容。</p>
+</article><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/AimRT/">AimRT</a><a class="post-meta__tags" href="/tags/%E6%9C%BA%E5%99%A8%E4%BA%BA%E6%A1%86%E6%9E%B6/">机器人框架</a><a class="post-meta__tags" href="/tags/%E5%AE%9E%E6%97%B6%E7%B3%BB%E7%BB%9F/">实时系统</a></div><div class="post-share"><div class="social-share" data-image="/img/dog-icon.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2026/04/20/ZBC-%E6%97%A0%E7%90%86%E6%95%B0%E9%98%88%E5%80%BC%E6%B3%95%E6%89%93%E7%A0%B4DDA%E6%9E%81%E9%99%90%E7%8E%AF/" title="用无理数阈值法解决伺服余数插补极限环抖动"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">用无理数阈值法解决伺服余数插补极限环抖动</div></div><div class="info-2"><div class="info-item-1">通过动态无理数阈值打破传统DDA余数累加的周期性极限环</div></div></div></a></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/dog-icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">BeichenZhuo</div><div class="author-info-description">伺服&机器人技术笔记</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">48</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">114</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/BeichenZhuo"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">email：1435148110@qq.com</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#AimRT-%E6%9E%B6%E6%9E%84%E8%A7%A3%E6%9E%90"><span class="toc-number">1.</span> <span class="toc-text">AimRT 架构解析</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BC%95%E8%A8%80"><span class="toc-number">1.1.</span> <span class="toc-text">引言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E6%95%B4%E4%BD%93%E6%9E%B6%E6%9E%84%E6%80%BB%E8%A7%88"><span class="toc-number">1.2.</span> <span class="toc-text">一、整体架构总览</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81Core%EF%BC%9A%E6%A1%86%E6%9E%B6%E5%85%A8%E5%B1%80%E5%86%85%E6%A0%B8%E4%B8%8E%E8%B5%84%E6%BA%90%E6%80%BB%E7%AE%A1"><span class="toc-number">1.3.</span> <span class="toc-text">二、Core：框架全局内核与资源总管</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81Module-amp-Pkg%EF%BC%9A%E4%B8%9A%E5%8A%A1%E6%9C%80%E5%B0%8F%E5%8D%95%E5%85%83%E4%B8%8E%E9%83%A8%E7%BD%B2%E8%BD%BD%E4%BD%93"><span class="toc-number">1.4.</span> <span class="toc-text">三、Module \&amp; Pkg：业务最小单元与部署载体</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-Module%EF%BC%9A%E6%A0%87%E5%87%86%E5%8C%96%E4%B8%9A%E5%8A%A1%E9%80%BB%E8%BE%91%E5%8E%9F%E5%AD%90"><span class="toc-number">1.4.1.</span> <span class="toc-text">3.1 Module：标准化业务逻辑原子</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-2-Pkg%EF%BC%9A%E5%B7%A5%E7%A8%8B%E5%8C%96%E5%8A%A8%E6%80%81%E9%83%A8%E7%BD%B2%E5%8D%95%E5%85%83"><span class="toc-number">1.4.2.</span> <span class="toc-text">3.2 Pkg：工程化动态部署单元</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81Executor%EF%BC%9A%E4%BB%BB%E5%8A%A1%E8%B0%83%E5%BA%A6%E6%A0%B8%E5%BF%83%EF%BC%88%E5%AE%9E%E6%97%B6%E6%80%A7%E5%9F%BA%E7%9F%B3%EF%BC%89"><span class="toc-number">1.5.</span> <span class="toc-text">四、Executor：任务调度核心（实时性基石）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E4%B8%83%E5%A4%A7%E5%AE%98%E6%96%B9%E6%89%A7%E8%A1%8C%E5%99%A8%E5%85%A8%E7%BB%B4%E5%BA%A6%E8%AF%A6%E8%A7%A3"><span class="toc-number">1.5.1.</span> <span class="toc-text">4.1 七大官方执行器全维度详解</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E9%80%9A%E4%BF%A1%E4%BD%93%E7%B3%BB%EF%BC%9AChannel-%E6%95%B0%E6%8D%AE%E6%B5%81%E4%B8%8E-RPC-%E6%8C%87%E4%BB%A4%E4%BA%A4%E4%BA%92"><span class="toc-number">1.6.</span> <span class="toc-text">五、通信体系：Channel 数据流与 RPC 指令交互</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-Channel-%E4%B8%8E-RPC-%E5%B7%AE%E5%BC%82%E5%8C%96%E5%AE%9A%E4%BD%8D"><span class="toc-number">1.6.1.</span> <span class="toc-text">5.1 Channel 与 RPC 差异化定位</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-%E7%BB%9F%E4%B8%80%E9%80%9A%E4%BF%A1%E6%A0%B8%E5%BF%83%E7%89%B9%E6%80%A7"><span class="toc-number">1.6.2.</span> <span class="toc-text">5.2 统一通信核心特性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-%E4%B8%89%E5%A4%A7%E5%8F%AF%E6%8F%92%E6%8B%94%E9%80%9A%E4%BF%A1%E5%90%8E%E7%AB%AF"><span class="toc-number">1.6.3.</span> <span class="toc-text">5.3 三大可插拔通信后端</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81C-20-%E5%8D%8F%E7%A8%8B%EF%BC%9A%E5%91%8A%E5%88%AB%E5%9B%9E%E8%B0%83%E5%9C%B0%E7%8B%B1%E7%9A%84%E5%BC%82%E6%AD%A5%E8%8C%83%E5%BC%8F"><span class="toc-number">1.7.</span> <span class="toc-text">六、C++20 协程：告别回调地狱的异步范式</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#6-1-%E5%8D%8F%E7%A8%8B%E6%A0%B8%E5%BF%83%E5%AE%9A%E4%BD%8D"><span class="toc-number">1.7.1.</span> <span class="toc-text">6.1 协程核心定位</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-2-%E5%8D%8F%E7%A8%8B%E4%B8%8E-Executor-%E5%8D%8F%E4%BD%9C%E5%8E%9F%E7%90%86"><span class="toc-number">1.7.2.</span> <span class="toc-text">6.2 协程与 Executor 协作原理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#6-3-%E5%8D%8F%E7%A8%8B%E5%B7%A5%E7%A8%8B%E4%BB%B7%E5%80%BC%E4%B8%8E%E4%BB%A3%E7%A0%81%E7%A4%BA%E4%BE%8B"><span class="toc-number">1.7.3.</span> <span class="toc-text">6.3 协程工程价值与代码示例</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81DynamicLatch%EF%BC%9A%E9%AB%98%E6%80%A7%E8%83%BD%E5%BC%82%E6%AD%A5%E5%90%8C%E6%AD%A5%E5%B7%A5%E5%85%B7"><span class="toc-number">1.8.</span> <span class="toc-text">七、DynamicLatch：高性能异步同步工具</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E5%85%A8%E9%93%BE%E8%B7%AF%E5%90%AF%E5%8A%A8%E4%B8%8E%E8%BF%90%E8%A1%8C%E6%97%B6%E5%BA%8F"><span class="toc-number">1.9.</span> <span class="toc-text">八、全链路启动与运行时序</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%93%E8%AF%AD"><span class="toc-number">1.10.</span> <span class="toc-text">结语</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/07/03/ZBC-%E4%BC%BA%E6%9C%8D%E7%B3%BB%E7%BB%9F%E8%BE%A8%E8%AF%86%E5%9B%9B%E5%A4%A7%E6%BF%80%E5%8A%B1%E6%B7%B1%E5%BA%A6%E5%AF%B9%E6%AF%94/" title="对比四种系统激励方式：正弦定点、Chirp扫频、PRBS伪随机、锤击法">对比四种系统激励方式：正弦定点、Chirp扫频、PRBS伪随机、锤击法</a><time datetime="2026-07-03T07:28:33.147Z" title="更新于 2026-07-03 15:28:33">2026-07-03</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/07/03/ZBC-%E4%BC%AA%E9%9A%8F%E6%9C%BA%E5%BA%8F%E5%88%97PRBS%E4%B8%8EDeBruijn%E5%AF%B9%E6%AF%94/" title="伪随机序列：PRBS(M序列) vs De Bruijn序列">伪随机序列：PRBS(M序列) vs De Bruijn序列</a><time datetime="2026-07-03T07:18:07.681Z" title="更新于 2026-07-03 15:18:07">2026-07-03</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/07/03/ZBC-%E5%AE%89%E5%B7%9D%E4%BC%BA%E6%9C%8D%E4%BD%8D%E7%BD%AE%E6%8C%87%E4%BB%A4%E9%99%B7%E6%B3%A2%E6%BB%A4%E6%B3%A2%E5%99%A8/" title="安川伺服源码推导位置指令陷波器">安川伺服源码推导位置指令陷波器</a><time datetime="2026-07-03T03:59:29.361Z" title="更新于 2026-07-03 11:59:29">2026-07-03</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/10/29/%E5%B9%B2%E6%91%A9%E6%93%A6%E8%87%AA%E6%8C%AF%E4%B8%8E%E6%9E%81%E9%99%90%E7%8E%AF/" title="干摩擦自振与极限环原理仿真">干摩擦自振与极限环原理仿真</a><time datetime="2026-07-02T16:52:08.563Z" title="更新于 2026-07-03 00:52:08">2026-07-03</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/07/05/ZBC-%E5%B7%A5%E4%B8%9A%E5%8D%8F%E4%BD%9C%E6%A8%A1%E5%9E%8B%E5%AF%B9%E6%AF%94/" title="工业与协作机器人控制模型对比分析">工业与协作机器人控制模型对比分析</a><time datetime="2026-07-01T16:43:08.578Z" title="更新于 2026-07-02 00:43:08">2026-07-02</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2023 - 2026 By BeichenZhuo</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.5</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.5"></script><script src="/js/main.js?v=5.5.5"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.1.2/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const parseViewBox = viewBox => {
+    if (!viewBox) return null
+    const parts = viewBox.trim().split(/[\s,]+/).map(n => Number(n))
+    if (parts.length !== 4 || parts.some(n => Number.isNaN(n))) return null
+    return parts
+  }
+
+  const getSvgViewBox = svg => {
+    const attr = parseViewBox(svg.getAttribute('viewBox'))
+    if (attr) return attr
+
+    // Fallback: use bbox to build a viewBox
+    try {
+      const bbox = svg.getBBox()
+      if (bbox && bbox.width && bbox.height) return [bbox.x, bbox.y, bbox.width, bbox.height]
+    } catch (e) {
+      // getBBox may fail on some edge cases; ignore
+    }
+
+    const w = Number(svg.getAttribute('width')) || 0
+    const h = Number(svg.getAttribute('height')) || 0
+    if (w > 0 && h > 0) return [0, 0, w, h]
+    return [0, 0, 100, 100]
+  }
+
+  const setSvgViewBox = (svg, vb) => {
+    svg.setAttribute('viewBox', `${vb[0]} ${vb[1]} ${vb[2]} ${vb[3]}`)
+  }
+
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
+
+  const openSvgInNewTab = ({ source, initViewBox }) => {
+    const getClonedSvg = () => {
+      if (typeof source === 'string') {
+        const template = document.createElement('template')
+        template.innerHTML = source.trim()
+        const svg = template.content.querySelector('svg')
+        return svg ? svg.cloneNode(true) : null
+      }
+      if (source && typeof source.cloneNode === 'function') {
+        return source.cloneNode(true)
+      }
+      return null
+    }
+
+    const clone = getClonedSvg()
+    if (!clone) return
+    if (initViewBox && initViewBox.length === 4) {
+      clone.setAttribute('viewBox', initViewBox.join(' '))
+    }
+    if (!clone.getAttribute('xmlns')) clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+    if (!clone.getAttribute('xmlns:xlink') && clone.outerHTML.includes('xlink:')) {
+      clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
+    }
+    // inject background to match current theme
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
+    const bg = getComputedStyle(document.body).backgroundColor || (isDark ? '#1e1e1e' : '#ffffff')
+    if (!clone.style.background) clone.style.background = bg
+
+    const serializer = new XMLSerializer()
+    const svgSource = serializer.serializeToString(clone)
+    const htmlSource = `<!doctype html><html><head><meta charset="utf-8" />
+      <style>
+        html, body { width: 100%; height: 100%; margin: 0; display: flex; align-items: center; justify-content: center; background: ${bg}; }
+        svg { max-width: 100%; max-height: 100%; height: auto; width: auto; }
+      </style>
+      </head><body>${svgSource}</body></html>`
+    const blob = new Blob([htmlSource], { type: 'text/html;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank', 'noopener')
+    setTimeout(() => URL.revokeObjectURL(url), 30000)
+  }
+
+  const attachMermaidViewerButton = wrap => {
+    let btn = wrap.querySelector('.mermaid-open-btn')
+    if (!btn) {
+      btn = document.createElement('button')
+      btn.type = 'button'
+      btn.className = 'mermaid-open-btn'
+      wrap.appendChild(btn)
+    }
+
+    btn.innerHTML = '<i class="fa fa-search fa-fw" aria-hidden="true"></i>'
+
+    if (!btn.__mermaidViewerBound) {
+      btn.addEventListener('click', e => {
+        e.preventDefault()
+        e.stopPropagation()
+        const svg = wrap.__mermaidOriginalSvg || wrap.querySelector('svg')
+        if (!svg) return
+        const initViewBox = wrap.__mermaidInitViewBox
+        if (typeof svg === 'string') {
+          openSvgInNewTab({ source: svg, initViewBox })
+          return
+        }
+        openSvgInNewTab({ source: svg, initViewBox })
+      })
+      btn.__mermaidViewerBound = true
+    }
+  }
+
+  // Zoom around a point (px, py) in the SVG viewport (in viewBox coordinates)
+  const zoomAtPoint = (vb, factor, px, py) => {
+    const w = vb[2] * factor
+    const h = vb[3] * factor
+    const nx = px - (px - vb[0]) * factor
+    const ny = py - (py - vb[1]) * factor
+    return [nx, ny, w, h]
+  }
+
+  const initMermaidGestures = wrap => {
+    const svg = wrap.querySelector('svg')
+    if (!svg) return
+
+    // Ensure viewBox exists so gestures always work
+    const initVb = getSvgViewBox(svg)
+    wrap.__mermaidInitViewBox = initVb
+    wrap.__mermaidCurViewBox = initVb.slice()
+    setSvgViewBox(svg, initVb)
+
+    // Avoid binding multiple times on themeChange/pjax
+    if (wrap.__mermaidGestureBound) return
+    wrap.__mermaidGestureBound = true
+
+    // Helper: map client (viewport) coordinate -> viewBox coordinate
+    const clientToViewBox = (clientX, clientY) => {
+      const rect = svg.getBoundingClientRect()
+      const vb = wrap.__mermaidCurViewBox || getSvgViewBox(svg)
+      const x = vb[0] + (clientX - rect.left) * (vb[2] / rect.width)
+      const y = vb[1] + (clientY - rect.top) * (vb[3] / rect.height)
+      return { x, y, rect, vb }
+    }
+
+    const state = {
+      pointers: new Map(),
+      startVb: null,
+      startDist: 0,
+      startCenter: null
+    }
+
+    const clampVb = vb => {
+      const init = wrap.__mermaidInitViewBox || vb
+      const minW = init[2] * 0.1
+      const maxW = init[2] * 10
+      const minH = init[3] * 0.1
+      const maxH = init[3] * 10
+      vb[2] = clamp(vb[2], minW, maxW)
+      vb[3] = clamp(vb[3], minH, maxH)
+      return vb
+    }
+
+    const setCurVb = vb => {
+      vb = clampVb(vb)
+      wrap.__mermaidCurViewBox = vb
+      setSvgViewBox(svg, vb)
+    }
+
+    const onPointerDown = e => {
+      // Allow only primary button for mouse
+      if (e.pointerType === 'mouse' && e.button !== 0) return
+      svg.setPointerCapture(e.pointerId)
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      if (state.pointers.size === 1) {
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      } else if (state.pointers.size === 2) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        state.startDist = Math.hypot(dx, dy)
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        state.startCenter = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 }
+      }
+    }
+
+    const onPointerMove = e => {
+      if (!state.pointers.has(e.pointerId)) return
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      // Pan with 1 pointer
+      if (state.pointers.size === 1 && state.startVb) {
+        const p = [...state.pointers.values()][0]
+        const prev = { x: e.clientX - e.movementX, y: e.clientY - e.movementY }
+        // movementX/Y unreliable on touch, compute from stored last position
+        const last = wrap.__mermaidLastSinglePointer || p
+        const dxClient = p.x - last.x
+        const dyClient = p.y - last.y
+        wrap.__mermaidLastSinglePointer = p
+
+        const { rect } = clientToViewBox(p.x, p.y)
+        const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        const dx = dxClient * (vb[2] / rect.width)
+        const dy = dyClient * (vb[3] / rect.height)
+        setCurVb([vb[0] - dx, vb[1] - dy, vb[2], vb[3]])
+        return
+      }
+
+      // Pinch zoom with 2 pointers
+      if (state.pointers.size === 2 && state.startVb && state.startDist > 0) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        const dist = Math.hypot(dx, dy)
+        if (!dist) return
+        const factor = state.startDist / dist // dist bigger => zoom in (viewBox smaller)
+
+        const cx = (pts[0].x + pts[1].x) / 2
+        const cy = (pts[0].y + pts[1].y) / 2
+        const centerClient = { x: cx, y: cy }
+
+        const pxy = clientToViewBox(centerClient.x, centerClient.y)
+        const cpx = pxy.x
+        const cpy = pxy.y
+
+        const vb = zoomAtPoint(state.startVb, factor, cpx, cpy)
+        setCurVb(vb)
+      }
+    }
+
+    const onPointerUpOrCancel = e => {
+      state.pointers.delete(e.pointerId)
+      if (state.pointers.size === 0) {
+        state.startVb = null
+        state.startDist = 0
+        state.startCenter = null
+        wrap.__mermaidLastSinglePointer = null
+      } else if (state.pointers.size === 1) {
+        // reset single pointer baseline to avoid jump
+        wrap.__mermaidLastSinglePointer = [...state.pointers.values()][0]
+      }
+    }
+
+    // Wheel zoom (mouse/trackpad)
+    const onWheel = e => {
+      // ctrlKey on mac trackpad pinch; we treat both as zoom
+      e.preventDefault()
+      const delta = e.deltaY
+      const zoomFactor = delta > 0 ? 1.1 : 0.9
+      const { x, y } = clientToViewBox(e.clientX, e.clientY)
+      const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      setCurVb(zoomAtPoint(vb, zoomFactor, x, y))
+    }
+
+    const onDblClick = () => {
+      const init = wrap.__mermaidInitViewBox
+      if (!init) return
+      wrap.__mermaidCurViewBox = init.slice()
+      setSvgViewBox(svg, init)
+    }
+
+    svg.addEventListener('pointerdown', onPointerDown)
+    svg.addEventListener('pointermove', onPointerMove)
+    svg.addEventListener('pointerup', onPointerUpOrCancel)
+    svg.addEventListener('pointercancel', onPointerUpOrCancel)
+    svg.addEventListener('wheel', onWheel, { passive: false })
+    svg.addEventListener('dblclick', onDblClick)
+  }
+
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+
+      // Clear old render (themeChange/pjax will rerun)
+      const oldSvg = item.querySelector('svg')
+      if (oldSvg) oldSvg.remove()
+      item.__mermaidGestureBound = false
+
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = `%%{init: ${JSON.stringify(config)}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+        if (true) initMermaidGestures(item)
+        item.__mermaidOriginalSvg = svg
+        if (true) attachMermaidViewerButton(item)
+      }
+
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (true) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script> document.addEventListener('DOMContentLoaded', function () {
+  if (location.pathname !== '/') return;
+  const headerWrap = document.getElementById('page-header');
+  if (!headerWrap) return;
+  const iframe = document.createElement('iframe');
+  iframe.src = '/6-HTRT/index.html';
+  iframe.className = 'full-header-iframe';
+  iframe.sandbox = 'allow-scripts allow-same-origin';
+  headerWrap.prepend(iframe);
+  const title = document.getElementById('site-title');
+  const subTitle = document.getElementById('site-subtitle');
+  const mask = document.createElement('div');
+  mask.className = 'title-mask';
+  if(title) mask.appendChild(title);
+  if(subTitle) mask.appendChild(subTitle);
+  document.getElementById('site-info').appendChild(mask);
+}); </script>
+<script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.5"></script></div></div></body></html>

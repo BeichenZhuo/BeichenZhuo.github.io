@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>6-HTRT 并联机器人 - 3D可视化</title>
+    <style>
+        /* 样式保持不变，此处省略以节省篇幅 */
+        :root {
+            --bg: #1a1a2e;
+            --panel-bg: #16213e;
+            --text: #e0e0e0;
+            --accent: #e94560;
+            --accent2: #0f3460;
+            --slider-track: #2a2a4a;
+            --border: #333355;
+            --btn-bg: #e94560;
+            --btn-hover: #ff6b81;
+            --gold: #f0c040;
+            --input-bg: #1e1e3a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            user-select: none;
+            -webkit-user-select: none;
+            display: flex;
+        }
+
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            cursor: grab;
+        }
+        #canvas-container:active {
+            cursor: grabbing;
+        }
+        #canvas-container canvas {
+            display: block;
+        }
+
+        #panel {
+            width: 380px;
+            background: var(--panel-bg);
+            border-left: 2px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+            z-index: 10;
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.5);
+            scrollbar-width: thin;
+            scrollbar-color: #444 #1a1a2e;
+        }
+        #panel::-webkit-scrollbar {
+            width: 6px;
+        }
+        #panel::-webkit-scrollbar-track {
+            background: #1a1a2e;
+        }
+        #panel::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 3px;
+        }
+
+        #panel h2 {
+            text-align: center;
+            padding: 16px 10px 6px;
+            font-size: 1.2em;
+            letter-spacing: 2px;
+            color: #fff;
+            background: linear-gradient(180deg, var(--accent2) 0%, transparent 100%);
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+        #panel .subtitle {
+            text-align: center;
+            font-size: 0.7em;
+            color: #888;
+            padding-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .section {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .section-title {
+            font-weight: 700;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #aaa;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .section-title::before {
+            content: '';
+            display: inline-block;
+            width: 3px;
+            height: 14px;
+            background: var(--accent);
+            border-radius: 2px;
+        }
+
+        .slider-group {
+            margin-bottom: 8px;
+        }
+        .slider-group label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.78em;
+            margin-bottom: 2px;
+            color: #ccc;
+        }
+        .slider-group label span.val {
+            color: var(--gold);
+            font-weight: 600;
+            font-size: 0.85em;
+            min-width: 48px;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            font-family: 'SF Mono', 'Consolas', 'Menlo', monospace;
+        }
+        .slider-group input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--slider-track);
+            outline: none;
+            cursor: pointer;
+        }
+        .slider-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            border: 2px solid #fff;
+            box-shadow: 0 0 8px rgba(233, 68, 96, 0.5);
+        }
+
+        .btn-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 6px;
+        }
+        button {
+            padding: 7px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75em;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+            background: var(--btn-bg);
+            color: #fff;
+            white-space: nowrap;
+        }
+        button:hover {
+            background: var(--btn-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(233, 68, 96, 0.4);
+        }
+        button:active {
+            transform: scale(0.96);
+        }
+        button.secondary {
+            background: var(--accent2);
+            color: #ccc;
+        }
+        button.secondary:hover {
+            background: #1a4a7a;
+            color: #fff;
+        }
+        button.reset-btn {
+            background: #444;
+            color: #ddd;
+        }
+        button.reset-btn:hover {
+            background: #666;
+        }
+
+        .mode-toggle {
+            display: flex;
+            background: var(--slider-track);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        .mode-toggle button {
+            flex: 1;
+            border-radius: 0;
+            padding: 8px;
+            font-size: 0.75em;
+            background: transparent;
+            color: #999;
+            letter-spacing: 1px;
+        }
+        .mode-toggle button.active {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        #info-overlay {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 0.7em;
+            pointer-events: none;
+            letter-spacing: 1px;
+            backdrop-filter: blur(4px);
+        }
+        #info-overlay span {
+            color: var(--gold);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container">
+        <div id="info-overlay">
+            6-HTRT 并联机器人 | 拖拽旋转 · 滚轮缩放 · 右键平移
+        </div>
+    </div>
+
+    <div id="panel">
+        <h2>6-HTRT 并联机器人</h2>
+        <div class="subtitle">Six-DOF Parallel Manipulator</div>
+
+        <div class="section">
+            <div class="section-title">控制模式</div>
+            <div class="mode-toggle" id="mode-toggle">
+                <button class="active" data-mode="pose">位姿控制 (XYZ+RPY)</button>
+                <button data-mode="screw">驱动控制 (6滑块)</button>
+            </div>
+        </div>
+
+        <div class="section" id="pose-controls">
+            <div class="section-title">动平台位姿</div>
+            <div class="slider-group">
+                <label>X 平移 <span class="val" id="val-x">0.0</span> mm</label>
+                <input type="range" id="slider-x" min="-80" max="80" value="0" step="0.5">
+            </div>
+            <div class="slider-group">
+                <label>Y 平移 <span class="val" id="val-y">0.0</span> mm</label>
+                <input type="range" id="slider-y" min="-80" max="80" value="0" step="0.5">
+            </div>
+            <div class="slider-group">
+                <label>Z 平移 <span class="val" id="val-z">100.0</span> mm</label>
+                <input type="range" id="slider-z" min="60" max="200" value="100" step="0.5">
+            </div>
+            <div class="slider-group">
+                <label>Roll (绕X) <span class="val" id="val-rx">0.0</span>°</label>
+                <input type="range" id="slider-rx" min="-25" max="25" value="0" step="0.1">
+            </div>
+            <div class="slider-group">
+                <label>Pitch (绕Y) <span class="val" id="val-ry">0.0</span>°</label>
+                <input type="range" id="slider-ry" min="-25" max="25" value="0" step="0.1">
+            </div>
+            <div class="slider-group">
+                <label>Yaw (绕Z) <span class="val" id="val-rz">0.0</span>°</label>
+                <input type="range" id="slider-rz" min="-25" max="25" value="0" step="0.1">
+            </div>
+        </div>
+
+        <div class="section" id="screw-controls" style="display:none;">
+            <div class="section-title">滑块驱动位移 (6轴)</div>
+            <div class="slider-group" id="screw-sliders"></div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">预设运动</div>
+            <div class="btn-row">
+                <button onclick="presetMotion('heave')">上下起伏</button>
+                <button onclick="presetMotion('sway')">左右摇摆</button>
+                <button onclick="presetMotion('circle')">水平画圆</button>
+                <button onclick="presetMotion('twist')">扭转</button>
+                <button class="secondary" onclick="stopPreset()">停止</button>
+                <button class="reset-btn" onclick="resetAll()">归零</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">当前状态</div>
+            <div style="font-size:0.72em;color:#aaa;line-height:1.6;" id="status-text">
+                动平台位姿计算中...
+            </div>
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // ==================== 机器人参数 ====================
+        const rA = 130;
+        const rB = 220;
+        const thetaA = 180 - 17.5;
+        const thetaB = 15 + 120;
+        const L_total = 200;
+        const rodCount = 6;
+
+        function calHinge0(d) {
+            const hinge = [];
+            for (let i = 0; i < rodCount; i++) {
+                const de = i % 2 === 0 ? d : -d;
+                const angleDeg = de + 120 * Math.floor(i / 2);
+                const angleRad = THREE.MathUtils.degToRad(angleDeg);
+                hinge.push({
+                    x: Math.cos(angleRad),
+                    y: Math.sin(angleRad),
+                    z: 0
+                });
+            }
+            return hinge;
+        }
+
+        const hingeA_local = calHinge0(thetaA).map(p => ({
+            x: p.x * rA,
+            y: p.y * rA,
+            z: 0
+        }));
+        const hingeB_base = calHinge0(thetaB).map(p => ({
+            x: p.x * rB,
+            y: p.y * rB,
+            z: 0
+        }));
+
+        // ==================== 场景初始化 ====================
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1a1a2e);
+        scene.fog = new THREE.Fog(0x1a1a2e, 400, 1800);
+
+        const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 10, 3000);
+        camera.up.set(0, 0, 1);
+        camera.position.set(387.13, -331.28, 300.71);
+        camera.lookAt(35, -50, 60);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        container.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.target.set(83.61, -71.25, -17.75);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.08;
+        controls.minDistance = 150;
+        controls.maxDistance = 1200;
+        controls.maxPolarAngle = Math.PI * 0.75;
+        controls.update();
+
+        // ==================== 光照 ====================
+        const ambientLight = new THREE.AmbientLight(0x404060, 4);
+        scene.add(ambientLight);
+        const sunLight = new THREE.DirectionalLight(0xffffff, 8);
+        sunLight.position.set(200, 300, 400);
+        sunLight.castShadow = true;
+        sunLight.shadow.mapSize.width = 2048;
+        sunLight.shadow.mapSize.height = 2048;
+        sunLight.shadow.camera.near = 10;
+        sunLight.shadow.camera.far = 2000;
+        sunLight.shadow.camera.left = -500;
+        sunLight.shadow.camera.right = 500;
+        sunLight.shadow.camera.top = 500;
+        sunLight.shadow.camera.bottom = -500;
+        sunLight.shadow.bias = -0.0001;
+        scene.add(sunLight);
+        const fillLight = new THREE.DirectionalLight(0x8899cc, 3);
+        fillLight.position.set(-150, -100, 50);
+        scene.add(fillLight);
+        const rimLight = new THREE.DirectionalLight(0xff8866, 1.5);
+        rimLight.position.set(0, 200, -100);
+        scene.add(rimLight);
+
+        // ==================== 材质 ====================
+        function createMaterial(colorHex, roughness = 0.4, metalness = 0.6) {
+            return new THREE.MeshStandardMaterial({
+                color: new THREE.Color(colorHex),
+                roughness,
+                metalness,
+            });
+        }
+        const matBasePlatform = createMaterial('#3a3a4a', 0.5, 0.7);
+        const matMovingPlatform = createMaterial('#2255aa', 0.3, 0.8);
+        const matRail = createMaterial('#8899aa', 0.25, 0.9);
+        const matSlider = createMaterial('#e94560', 0.3, 0.5);
+        const matUpperRod = createMaterial('#ee6633', 0.35, 0.7);
+        const matLowerRod = createMaterial('#33aa77', 0.35, 0.7);
+        const matJointBall = createMaterial('#ffcc00', 0.2, 0.3);
+        const matHingeMarker = createMaterial('#ffffff', 0.3, 0.4);
+        const matGrid = new THREE.MeshStandardMaterial({
+            color: 0x334455,
+            roughness: 0.9,
+            metalness: 0.1,
+            transparent: true,
+            opacity: 0.6,
+        });
+
+        // ==================== 场景构建 ====================
+        const mainGroup = new THREE.Group();
+        scene.add(mainGroup);
+
+        const gridHelper = new THREE.PolarGridHelper(280, 36, 18, 64, matGrid.color, matGrid.color);
+        gridHelper.position.z = -205;
+        gridHelper.rotation.x = -Math.PI / 2;
+        scene.add(gridHelper);
+
+        const basePlatformGroup = new THREE.Group();
+        mainGroup.add(basePlatformGroup);
+        const baseRingGeo = new THREE.TorusGeometry(rB, 8, 16, 80);
+        const baseRing = new THREE.Mesh(baseRingGeo, matBasePlatform);
+        baseRing.position.z = -200;
+        baseRing.castShadow = true;
+        baseRing.receiveShadow = true;
+        basePlatformGroup.add(baseRing);
+
+        const railGroups = [];
+        const railLength = 300;
+        for (let i = 0; i < rodCount; i++) {
+            const railGroup = new THREE.Group();
+            const bp = hingeB_base[i];
+            railGroup.position.set(bp.x, bp.y, -200);
+            railGroup.rotation.x = -Math.PI / 2;
+            const railGeo = new THREE.CylinderGeometry(3.5, 4, railLength, 16);
+            const rail = new THREE.Mesh(railGeo, matRail);
+            rail.position.set(0, -railLength / 2, 0);
+            rail.castShadow = true;
+            rail.receiveShadow = true;
+            railGroup.add(rail);
+            const collarGeo = new THREE.TorusGeometry(6, 2, 8, 16);
+            const collar = new THREE.Mesh(collarGeo, matRail);
+            collar.position.set(0, 2, 0);
+            railGroup.add(collar);
+            const stopGeo = new THREE.CylinderGeometry(7, 7, 4, 16);
+            const stopMesh = new THREE.Mesh(stopGeo, matBasePlatform);
+            stopMesh.position.set(0, -railLength + 2, 0);
+            railGroup.add(stopMesh);
+            mainGroup.add(railGroup);
+            railGroups.push(railGroup);
+        }
+
+        const sliderMeshes = [];
+        for (let i = 0; i < rodCount; i++) {
+            const sliderGroup = new THREE.Group();
+            const bp = hingeB_base[i];
+            sliderGroup.position.set(bp.x, bp.y, 0);
+            sliderGroup.rotation.x = -Math.PI / 2;
+            const sliderBodyGeo = new THREE.BoxGeometry(14, 14, 18, 4, 4, 4);
+            const sliderBody = new THREE.Mesh(sliderBodyGeo, matSlider);
+            sliderBody.castShadow = true;
+            sliderGroup.add(sliderBody);
+            const hingeBaseGeo = new THREE.CylinderGeometry(6, 7, 8, 16);
+            const hingeBase = new THREE.Mesh(hingeBaseGeo, matJointBall);
+            hingeBase.position.set(0, 10, 0);
+            sliderGroup.add(hingeBase);
+            const ballGeo = new THREE.SphereGeometry(5, 16, 16);
+            const ball = new THREE.Mesh(ballGeo, matJointBall);
+            ball.position.set(0, 15, 0);
+            ball.castShadow = true;
+            sliderGroup.add(ball);
+            mainGroup.add(sliderGroup);
+            sliderMeshes.push(sliderGroup);
+        }
+
+        const movingPlatformGroup = new THREE.Group();
+        movingPlatformGroup.position.set(0, 0, 100);
+        mainGroup.add(movingPlatformGroup);
+        const mpDiscGeo = new THREE.CylinderGeometry(rA, rA, 10, 48);
+        const mpDisc = new THREE.Mesh(mpDiscGeo, matMovingPlatform);
+        mpDisc.rotation.x = -Math.PI / 2;
+        mpDisc.position.z = 0;
+        mpDisc.castShadow = true;
+        mpDisc.receiveShadow = true;
+        movingPlatformGroup.add(mpDisc);
+        const mpHingeMarkers = [];
+        for (let i = 0; i < rodCount; i++) {
+            const ha = hingeA_local[i];
+            const markerGeo = new THREE.SphereGeometry(5.5, 16, 16);
+            const marker = new THREE.Mesh(markerGeo, matHingeMarker);
+            marker.position.set(ha.x, ha.y, 5);
+            marker.castShadow = true;
+            movingPlatformGroup.add(marker);
+            mpHingeMarkers.push(marker);
+        }
+        const topRingGeo = new THREE.TorusGeometry(rA * 0.55, 3, 8, 32);
+        const topRing = new THREE.Mesh(topRingGeo, matMovingPlatform);
+        topRing.position.z = 5;
+        movingPlatformGroup.add(topRing);
+
+        const rodUpperGroups = [];
+        const rodLowerGroups = [];
+        const rodMidBalls = [];
+        for (let i = 0; i < rodCount; i++) {
+            const upperGroup = new THREE.Group();
+            const upperRodGeo = new THREE.CylinderGeometry(3.5, 4.5, L_total * 0.5, 12);
+            const upperRod = new THREE.Mesh(upperRodGeo, matUpperRod);
+            upperRod.castShadow = true;
+            upperGroup.add(upperRod);
+            mainGroup.add(upperGroup);
+            rodUpperGroups.push(upperGroup);
+
+            const lowerGroup = new THREE.Group();
+            const lowerRodGeo = new THREE.CylinderGeometry(6.8, 5.8, L_total * 0.5, 12);
+            const lowerRod = new THREE.Mesh(lowerRodGeo, matLowerRod);
+            lowerRod.castShadow = true;
+            lowerGroup.add(lowerRod);
+            mainGroup.add(lowerGroup);
+            rodLowerGroups.push(lowerGroup);
+
+            const midBallGeo = new THREE.SphereGeometry(4.5, 12, 12);
+            const midBall = new THREE.Mesh(midBallGeo, matJointBall);
+            midBall.castShadow = true;
+            mainGroup.add(midBall);
+            rodMidBalls.push(midBall);
+        }
+
+        // ==================== 运动学函数 ====================
+        function degToRad(d) { return d * Math.PI / 180; }
+        function radToDeg(r) { return r * 180 / Math.PI; }
+
+        function calRotMat(rpyRad) {
+            const [r, p, y] = rpyRad;
+            const cr = Math.cos(r), sr = Math.sin(r);
+            const cp = Math.cos(p), sp = Math.sin(p);
+            const cy = Math.cos(y), sy = Math.sin(y);
+            return [
+                [cy * cp, cy * sp * sr - sy * cr, cy * sp * cr + sy * sr],
+                [sy * cp, sy * sp * sr + cy * cr, sy * sp * cr - cy * sr],
+                [-sp, cp * sr, cp * cr]
+            ];
+        }
+
+        function matVecMul(R, v) {
+            return {
+                x: R[0][0] * v.x + R[0][1] * v.y + R[0][2] * v.z,
+                y: R[1][0] * v.x + R[1][1] * v.y + R[1][2] * v.z,
+                z: R[2][0] * v.x + R[2][1] * v.y + R[2][2] * v.z,
+            };
+        }
+
+        function inverseKinematics(pose) {
+            const { x, y, z, rx, ry, rz } = pose;
+            const rpyRad = [degToRad(rx), degToRad(ry), degToRad(rz)];
+            const R = calRotMat(rpyRad);
+            const screwPositions = [];
+            for (let i = 0; i < rodCount; i++) {
+                const ha = hingeA_local[i];
+                const ao = matVecMul(R, ha);
+                const ao_x = ao.x + x;
+                const ao_y = ao.y + y;
+                const ao_z = ao.z + z;
+                const bp = hingeB_base[i];
+                const dx = ao_x - bp.x;
+                const dy = ao_y - bp.y;
+                const L_sq = L_total * L_total;
+                const xy_sq = dx * dx + dy * dy;
+                const dz_sq = L_sq - xy_sq;
+                if (dz_sq < 0) {
+                    screwPositions.push(ao_z - Math.sqrt(Math.max(0, L_sq - xy_sq * 0.98)));
+                } else {
+                    screwPositions.push(ao_z - Math.sqrt(dz_sq));
+                }
+            }
+            return screwPositions;
+        }
+
+        function jacobianMat(pose) {
+            const { x, y, z, rx, ry, rz } = pose;
+            const rpyRad = [degToRad(rx), degToRad(ry), degToRad(rz)];
+            const R = calRotMat(rpyRad);
+            const screwPos = inverseKinematics(pose);
+            const J = Array.from({ length: 6 }, () => Array(6).fill(0));
+            for (let i = 0; i < rodCount; i++) {
+                const ha = hingeA_local[i];
+                const ao = matVecMul(R, ha);
+                const ao_x = ao.x + x;
+                const ao_y = ao.y + y;
+                const ao_z = ao.z + z;
+                const bp = hingeB_base[i];
+                const Lvec_x = ao_x - bp.x;
+                const Lvec_y = ao_y - bp.y;
+                const Lvec_z = ao_z - screwPos[i];
+                const len = Math.sqrt(Lvec_x * Lvec_x + Lvec_y * Lvec_y + Lvec_z * Lvec_z);
+                const ux = Lvec_x / len;
+                const uy = Lvec_y / len;
+                const uz = Lvec_z / len;
+                const rx_v = ao_x - x;
+                const ry_v = ao_y - y;
+                const rz_v = ao_z - z;
+                const cx = ry_v * uz - rz_v * uy;
+                const cy = rz_v * ux - rx_v * uz;
+                const cz = rx_v * uy - ry_v * ux;
+                const degToRadFactor = Math.PI / 180;
+                J[i][0] = ux; J[i][1] = uy; J[i][2] = uz;
+                J[i][3] = cx * degToRadFactor;
+                J[i][4] = cy * degToRadFactor;
+                J[i][5] = cz * degToRadFactor;
+            }
+            return J;
+        }
+
+        function invert6x6(M) {
+            const n = 6;
+            const aug = M.map((row, i) => {
+                const r = [...row];
+                const id = Array(n).fill(0);
+                id[i] = 1;
+                return [...r, ...id];
+            });
+            for (let col = 0; col < n; col++) {
+                let pivot = col;
+                for (let row = col + 1; row < n; row++)
+                    if (Math.abs(aug[row][col]) > Math.abs(aug[pivot][col])) pivot = row;
+                [aug[col], aug[pivot]] = [aug[pivot], aug[col]];
+                const pivVal = aug[col][col];
+                if (Math.abs(pivVal) < 1e-12) return null;
+                for (let j = col; j < 2 * n; j++) aug[col][j] /= pivVal;
+                for (let row = 0; row < n; row++) {
+                    if (row === col) continue;
+                    const factor = aug[row][col];
+                    for (let j = col; j < 2 * n; j++) aug[row][j] -= factor * aug[col][j];
+                }
+            }
+            return aug.map(row => row.slice(n));
+        }
+
+        function vecInfNorm(v) { return Math.max(...v.map(Math.abs)); }
+        function vecSub(a, b) { return a.map((v, i) => v - b[i]); }
+        function matVecMul6x6(M, v) { return M.map(row => row.reduce((s, mij, j) => s + mij * v[j], 0)); }
+
+        function forwardKinematics(screwTarget, initialGuess, maxIter = 50, tol = 1e-8) {
+            let pose = { ...initialGuess };
+            for (let iter = 0; iter < maxIter; iter++) {
+                const screwCurrent = inverseKinematics(pose);
+                const error = vecSub(screwTarget, screwCurrent);
+                if (vecInfNorm(error) < tol) return { pose, converged: true, iterations: iter };
+                const J = jacobianMat(pose);
+                const J_inv = invert6x6(J);
+                if (!J_inv) return { pose, converged: false, iterations: iter };
+                const delta = matVecMul6x6(J_inv, error);
+                const alpha = Math.min(1.0, 15.0 / Math.max(1, vecInfNorm(delta)));
+                pose = {
+                    x: pose.x + alpha * delta[0],
+                    y: pose.y + alpha * delta[1],
+                    z: pose.z + alpha * delta[2],
+                    rx: pose.rx + alpha * delta[3],
+                    ry: pose.ry + alpha * delta[4],
+                    rz: pose.rz + alpha * delta[5],
+                };
+                pose.rx = Math.max(-40, Math.min(40, pose.rx));
+                pose.ry = Math.max(-40, Math.min(40, pose.ry));
+                pose.rz = Math.max(-40, Math.min(40, pose.rz));
+                pose.z = Math.max(30, Math.min(220, pose.z));
+            }
+            return { pose, converged: false, iterations: maxIter };
+        }
+
+        function placeRodBetween(group, start, end, rodLength) {
+            group.position.copy(start);
+            const dir = new THREE.Vector3().subVectors(end, start);
+            const dist = dir.length();
+            dir.normalize();
+            const defaultDir = new THREE.Vector3(0, 1, 0);
+            const quat = new THREE.Quaternion().setFromUnitVectors(defaultDir, dir);
+            group.setRotationFromQuaternion(quat);
+            const scaleY = dist / rodLength;
+            group.children[0].scale.y = scaleY;
+            group.children[0].position.y = dist / 2;
+        }
+
+        function updateRobotVisuals(pose, screwPositions) {
+            const { x, y, z, rx, ry, rz } = pose;
+            movingPlatformGroup.position.set(x, y, z);
+            movingPlatformGroup.rotation.set(degToRad(rx), degToRad(ry), degToRad(rz), 'XYZ');
+            movingPlatformGroup.updateMatrixWorld();
+            for (let i = 0; i < rodCount; i++) {
+                const bp = hingeB_base[i];
+                const sz = screwPositions[i];
+                sliderMeshes[i].position.set(bp.x, bp.y, sz);
+                sliderMeshes[i].updateMatrixWorld();
+                const jointSlider = sliderMeshes[i].children[2].getWorldPosition(new THREE.Vector3());
+                const jointMoving = mpHingeMarkers[i].getWorldPosition(new THREE.Vector3());
+                const midPoint = new THREE.Vector3(
+                    (jointSlider.x + jointMoving.x) / 2,
+                    (jointSlider.y + jointMoving.y) / 2,
+                    (jointSlider.z + jointMoving.z) / 2
+                );
+                rodMidBalls[i].position.copy(midPoint);
+                const upperLen = L_total * 0.5;
+                placeRodBetween(rodUpperGroups[i], midPoint, jointMoving, upperLen);
+                placeRodBetween(rodLowerGroups[i], jointSlider, midPoint, upperLen);
+            }
+        }
+
+        // ==================== 状态与UI (带偏置) ====================
+        let currentPose = { x: 0, y: 0, z: 100, rx: 0, ry: 0, rz: 0 };
+        let currentScrew = inverseKinematics(currentPose);
+        let screwBias = []; // 每个支链的显示偏置
+        let controlMode = 'pose';
+        let presetAnimationId = null;
+
+        // 计算初始偏置，使初始显示值均为100
+        function computeInitialBias() {
+            const initial = inverseKinematics({ x: 0, y: 0, z: 100, rx: 0, ry: 0, rz: 0 });
+            screwBias = initial.map(v => 100 - v);
+        }
+
+        function getDisplayScrew(physical) {
+            return physical.map((v, i) => v + screwBias[i]);
+        }
+        function getPhysicalScrew(display) {
+            return display.map((v, i) => v - screwBias[i]);
+        }
+
+        function updateAllVisuals() {
+            updateRobotVisuals(currentPose, currentScrew);
+            updateUIValues();
+            updateStatusText();
+        }
+
+        function updateUIValues() {
+            document.getElementById('val-x').textContent = currentPose.x.toFixed(1);
+            document.getElementById('val-y').textContent = currentPose.y.toFixed(1);
+            document.getElementById('val-z').textContent = currentPose.z.toFixed(1);
+            document.getElementById('val-rx').textContent = currentPose.rx.toFixed(1);
+            document.getElementById('val-ry').textContent = currentPose.ry.toFixed(1);
+            document.getElementById('val-rz').textContent = currentPose.rz.toFixed(1);
+            document.getElementById('slider-x').value = currentPose.x;
+            document.getElementById('slider-y').value = currentPose.y;
+            document.getElementById('slider-z').value = currentPose.z;
+            document.getElementById('slider-rx').value = currentPose.rx;
+            document.getElementById('slider-ry').value = currentPose.ry;
+            document.getElementById('slider-rz').value = currentPose.rz;
+
+            const displayScrew = getDisplayScrew(currentScrew);
+            for (let i = 0; i < rodCount; i++) {
+                const screwSlider = document.getElementById('screw-slider-' + i);
+                const screwVal = document.getElementById('screw-val-' + i);
+                if (screwSlider && screwVal) {
+                    screwSlider.value = displayScrew[i];
+                    screwVal.textContent = displayScrew[i].toFixed(2);
+                }
+            }
+        }
+
+        function updateStatusText() {
+            const sp = getDisplayScrew(currentScrew);
+            document.getElementById('status-text').innerHTML = `
+                <b>动平台位姿:</b><br>
+                XYZ: (${currentPose.x.toFixed(2)}, ${currentPose.y.toFixed(2)}, ${currentPose.z.toFixed(2)}) mm<br>
+                RPY: (${currentPose.rx.toFixed(2)}, ${currentPose.ry.toFixed(2)}, ${currentPose.rz.toFixed(2)})°<br>
+                <b>滑块显示值:</b><br>
+                [${sp.map(v=>v.toFixed(2)).join(', ')}] mm
+            `;
+        }
+
+        function setPoseFromSliders() {
+            currentPose.x = parseFloat(document.getElementById('slider-x').value);
+            currentPose.y = parseFloat(document.getElementById('slider-y').value);
+            currentPose.z = parseFloat(document.getElementById('slider-z').value);
+            currentPose.rx = parseFloat(document.getElementById('slider-rx').value);
+            currentPose.ry = parseFloat(document.getElementById('slider-ry').value);
+            currentPose.rz = parseFloat(document.getElementById('slider-rz').value);
+            currentScrew = inverseKinematics(currentPose);
+            updateAllVisuals();
+        }
+
+        function setScrewFromSliders() {
+            const display = [];
+            for (let i = 0; i < rodCount; i++) {
+                const slider = document.getElementById('screw-slider-' + i);
+                display.push(parseFloat(slider.value));
+            }
+            currentScrew = getPhysicalScrew(display);
+            const result = forwardKinematics(currentScrew, currentPose, 30, 1e-6);
+            if (result.converged) {
+                currentPose = result.pose;
+            } else {
+                console.warn('正解未完全收敛, 使用近似值');
+                currentPose = result.pose;
+            }
+            updateAllVisuals();
+        }
+
+        function resetAll() {
+            stopPreset();
+            currentPose = { x: 0, y: 0, z: 100, rx: 0, ry: 0, rz: 0 };
+            currentScrew = inverseKinematics(currentPose);
+            updateAllVisuals();
+        }
+
+        // 预设运动
+        let presetStartTime = null;
+        let presetType = null;
+        function presetMotion(type) {
+            stopPreset();
+            presetType = type;
+            presetStartTime = performance.now();
+            const startPose = { ...currentPose };
+            function animatePreset(now) {
+                if (presetType === null) return;
+                const elapsed = (now - presetStartTime) / 1000;
+                const freq = 0.6, amp_trans = 35, amp_rot = 12;
+                const omega = 2 * Math.PI * freq;
+                let tp = { ...startPose };
+                switch (presetType) {
+                    case 'heave': tp.z = startPose.z + amp_trans * Math.sin(omega * elapsed); break;
+                    case 'sway': tp.rx = amp_rot * Math.sin(omega * elapsed); tp.ry = amp_rot * Math.cos(omega * elapsed * 1.3); break;
+                    case 'circle': tp.x = startPose.x + amp_trans * Math.cos(omega * elapsed); tp.y = startPose.y + amp_trans * Math.sin(omega * elapsed); break;
+                    case 'twist': tp.rz = amp_rot * 1.5 * Math.sin(omega * elapsed); tp.z = startPose.z + amp_trans * 0.4 * Math.sin(omega * elapsed * 0.7); break;
+                }
+                currentPose = tp;
+                currentScrew = inverseKinematics(currentPose);
+                updateAllVisuals();
+                presetAnimationId = requestAnimationFrame(animatePreset);
+            }
+            presetAnimationId = requestAnimationFrame(animatePreset);
+        }
+        function stopPreset() {
+            if (presetAnimationId) cancelAnimationFrame(presetAnimationId);
+            presetAnimationId = null;
+            presetType = null;
+            presetStartTime = null;
+        }
+
+        // UI构建
+        function buildScrewSliders() {
+            const container = document.getElementById('screw-sliders');
+            container.innerHTML = '';
+            const displayScrew = getDisplayScrew(currentScrew);
+            for (let i = 0; i < rodCount; i++) {
+                const div = document.createElement('div');
+                div.className = 'slider-group';
+                div.innerHTML = `
+                    <label>滑块 ${i+1} <span class="val" id="screw-val-${i}">${displayScrew[i].toFixed(2)}</span> mm</label>
+                    <input type="range" id="screw-slider-${i}" min="0" max="200" value="${displayScrew[i].toFixed(2)}" step="0.1">
+                `;
+                container.appendChild(div);
+                const slider = div.querySelector('input');
+                const valSpan = div.querySelector('.val');
+                slider.addEventListener('input', () => {
+                    valSpan.textContent = parseFloat(slider.value).toFixed(2);
+                    if (controlMode === 'screw') setScrewFromSliders();
+                });
+            }
+        }
+
+        document.getElementById('mode-toggle').addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON' && e.target.dataset.mode) {
+                controlMode = e.target.dataset.mode;
+                document.querySelectorAll('#mode-toggle button').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                document.getElementById('pose-controls').style.display = controlMode === 'pose' ? 'block' : 'none';
+                document.getElementById('screw-controls').style.display = controlMode === 'screw' ? 'block' : 'none';
+                if (controlMode === 'screw') {
+                    currentScrew = inverseKinematics(currentPose);
+                    buildScrewSliders();
+                }
+                updateAllVisuals();
+            }
+        });
+
+        ['x', 'y', 'z', 'rx', 'ry', 'rz'].forEach(axis => {
+            const slider = document.getElementById('slider-' + axis);
+            const valSpan = document.getElementById('val-' + axis);
+            slider.addEventListener('input', () => {
+                valSpan.textContent = parseFloat(slider.value).toFixed(1);
+                if (controlMode === 'pose') setPoseFromSliders();
+            });
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        window.addEventListener('keydown', (e) => {
+            switch (e.key.toLowerCase()) {
+                case 'r': resetAll(); break;
+                case '1': presetMotion('heave'); break;
+                case '2': presetMotion('sway'); break;
+                case '3': presetMotion('circle'); break;
+                case '4': presetMotion('twist'); break;
+                case ' ': stopPreset(); break;
+                case 'm':
+                    controlMode = controlMode === 'pose' ? 'screw' : 'pose';
+                    document.querySelectorAll('#mode-toggle button').forEach(b => {
+                        b.classList.toggle('active', b.dataset.mode === controlMode);
+                    });
+                    document.getElementById('pose-controls').style.display = controlMode === 'pose' ? 'block' : 'none';
+                    document.getElementById('screw-controls').style.display = controlMode === 'screw' ? 'block' : 'none';
+                    if (controlMode === 'screw') {
+                        currentScrew = inverseKinematics(currentPose);
+                        buildScrewSliders();
+                    }
+                    updateAllVisuals();
+                    break;
+            }
+        });
+
+        // 初始化
+        function init() {
+            computeInitialBias(); // 计算偏置使初始显示为100
+            currentPose = { x: 0, y: 0, z: 100, rx: 0, ry: 0, rz: 0 };
+            currentScrew = inverseKinematics(currentPose);
+            const fkResult = forwardKinematics(currentScrew, currentPose, 20, 1e-6);
+            if (fkResult.converged) {
+                currentPose = fkResult.pose;
+                currentScrew = inverseKinematics(currentPose);
+            }
+            buildScrewSliders();
+            updateAllVisuals();
+        }
+// 挂载到window，控制台可直接调用
+window.camera = camera;
+window.controls = controls;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        init();
+        animate();
+
+        window.presetMotion = presetMotion;
+        window.stopPreset = stopPreset;
+        window.resetAll = resetAll;
+    </script>
+</body>
+</html>
