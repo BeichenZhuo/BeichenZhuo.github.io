@@ -1,0 +1,691 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>BD硬实时裸机架构——个人理解最优解决方案 | BeichenZhuo的Blog</title><meta name="author" content="BeichenZhuo"><meta name="copyright" content="BeichenZhuo"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="RMS单调速率裸机硬实时系统的分层固件架构，三层模块划分、双层隔离变量体系、零拷贝全局访问。这是我对裸机痛点问题的理解和最优解决方案，细节待完善。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="BD硬实时裸机架构——个人理解最优解决方案">
+<meta property="og:url" content="https://beichenzhuo.github.io/2024/07/04/BD%E7%A1%AC%E5%AE%9E%E6%97%B6%E8%A3%B8%E6%9C%BA%E6%9E%B6%E6%9E%84/index.html">
+<meta property="og:site_name" content="BeichenZhuo的Blog">
+<meta property="og:description" content="RMS单调速率裸机硬实时系统的分层固件架构，三层模块划分、双层隔离变量体系、零拷贝全局访问。这是我对裸机痛点问题的理解和最优解决方案，细节待完善。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://beichenzhuo.github.io/2024/07/04/BD%E7%A1%AC%E5%AE%9E%E6%97%B6%E8%A3%B8%E6%9C%BA%E6%9E%B6%E6%9E%84/images/image_6.png">
+<meta property="article:published_time" content="2024-07-04T11:30:00.000Z">
+<meta property="article:modified_time" content="2026-07-04T15:27:52.691Z">
+<meta property="article:author" content="BeichenZhuo">
+<meta property="article:tag" content="嵌入式架构">
+<meta property="article:tag" content="硬实时">
+<meta property="article:tag" content="裸机系统">
+<meta property="article:tag" content="运动控制">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://beichenzhuo.github.io/2024/07/04/BD%E7%A1%AC%E5%AE%9E%E6%97%B6%E8%A3%B8%E6%9C%BA%E6%9E%B6%E6%9E%84/images/image_6.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "BD硬实时裸机架构——个人理解最优解决方案",
+  "url": "https://beichenzhuo.github.io/2024/07/04/BD%E7%A1%AC%E5%AE%9E%E6%97%B6%E8%A3%B8%E6%9C%BA%E6%9E%B6%E6%9E%84/",
+  "image": "https://beichenzhuo.github.io/2024/07/04/BD%E7%A1%AC%E5%AE%9E%E6%97%B6%E8%A3%B8%E6%9C%BA%E6%9E%B6%E6%9E%84/images/image_6.png",
+  "datePublished": "2024-07-04T11:30:00.000Z",
+  "dateModified": "2026-07-04T15:27:52.691Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "BeichenZhuo",
+      "url": "https://BeichenZhuo.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://beichenzhuo.github.io/2024/07/04/BD%E7%A1%AC%E5%AE%9E%E6%97%B6%E8%A3%B8%E6%9C%BA%E6%9E%B6%E6%9E%84/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.5"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":-1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'BD硬实时裸机架构——个人理解最优解决方案',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/custom.css"><meta name="generator" content="Hexo 8.1.2"></head><body><div class="bg-animation" id="web_bg" style="background: [object Object];"></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/2024/07/04/BD%E7%A1%AC%E5%AE%9E%E6%97%B6%E8%A3%B8%E6%9C%BA%E6%9E%B6%E6%9E%84/.%5Cimages%5Cimage_6.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">BeichenZhuo的Blog</span></a><a class="nav-page-title" href="/"><span class="site-name">BD硬实时裸机架构——个人理解最优解决方案</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div></div></nav><div id="post-info"><h1 class="post-title">BD硬实时裸机架构——个人理解最优解决方案</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-07-04T11:30:00.000Z" title="发表于 2024-07-04 19:30:00">2024-07-04</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-07-04T15:27:52.691Z" title="更新于 2026-07-04 23:27:52">2026-07-04</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在运动控制、伺服、变频器这类<strong>RMS 单调速率裸机硬实时系统</strong>中，系统存在多级固定周期硬件中断，各级速率固定（如 16K 高速电流环、4K 速度环、1K 位置环、4ms 后台），对任务执行抖动、运行时内存分配、多中断数据竞态极度敏感。<br>传统裸机开发痛点：全局变量泛滥耦合、中断并发数据撕裂、运行 malloc 堆碎片、多轴代码复用难、模块输入输出硬编码改动成本高。</p>
+<p>BD 是一套纯 C 实现、无操作系统依赖的分层固件架构，专为严苛硬实时场景设计。核心能力：三层模块划分、双层隔离变量体系、分调度全局数据池、宏实现零拷贝全局访问、标准化跨调度同步、配置驱动自动化数据流。下面结合完整代码示例逐层拆解。</p>
+<h2 id="一、适用场景核心约束"><a href="#一、适用场景核心约束" class="headerlink" title="一、适用场景核心约束"></a>一、适用场景核心约束</h2><h3 id="适配场景"><a href="#适配场景" class="headerlink" title="适配场景"></a>适配场景</h3><ol>
+<li><p>RMS 多级固定周期硬件中断裸机系统；</p>
+</li>
+<li><p>低抖动要求，禁止运行时动态堆分配；</p>
+</li>
+<li><p>多轴 / 多实例并行控制，一套逻辑多路复用；</p>
+</li>
+<li><p>多中断频繁读写共享数据，易出现脏读、数据撕裂；</p>
+</li>
+<li><p>长期多人迭代，需要强制代码隔离规范。</p>
+</li>
+</ol>
+<h2 id="二、三层模块分层体系（调度属性-代码示例）"><a href="#二、三层模块分层体系（调度属性-代码示例）" class="headerlink" title="二、三层模块分层体系（调度属性 + 代码示例）"></a>二、三层模块分层体系（调度属性 + 代码示例）</h2><p>模块分为 Ex 顶层流程、Mo 子流程、Class 算法三层，嵌套链路：主调度 → Ex → 多层 Mo → Class。<br><img src="images/image_1.png" alt="在这里插入图片描述"></p>
+<h3 id="1-Ex-顶层流程模块（有调度，全局变量所有者）"><a href="#1-Ex-顶层流程模块（有调度，全局变量所有者）" class="headerlink" title="1. Ex 顶层流程模块（有调度，全局变量所有者）"></a>1. Ex 顶层流程模块（有调度，全局变量所有者）</h3><h4 id="核心特性"><a href="#核心特性" class="headerlink" title="核心特性"></a>核心特性</h4><ul>
+<li><p>绑定多级调度，每个中断独立入口函数；</p>
+</li>
+<li><p>唯一拥有全局 IN/OUT 变量注册权限；</p>
+</li>
+<li><p>开机链式创建下属 Mo、Class；</p>
+</li>
+<li><p>实例化由配置文件自动生成，无需手写循环。</p>
+</li>
+</ul>
+<p>（FInt，RInt … 为不同速率调度的任务）<br><img src="images/image_2.png" alt="在这里插入图片描述"></p>
+<h3 id="2-Mo-子流程模块（有调度，仅转发全局变量）"><a href="#2-Mo-子流程模块（有调度，仅转发全局变量）" class="headerlink" title="2. Mo 子流程模块（有调度，仅转发全局变量）"></a>2. Mo 子流程模块（有调度，仅转发全局变量）</h3><h4 id="核心特性-1"><a href="#核心特性-1" class="headerlink" title="核心特性"></a>核心特性</h4><ul>
+<li><p>同 Ex 具备调度专属函数；</p>
+</li>
+<li><p>无全局变量注册权，只能通过 MO_IN 转发 Ex 接口；</p>
+</li>
+<li><p>支持 Mo 嵌套 Mo，构造函数由 Ex 调用。</p>
+</li>
+</ul>
+<h4 id="Mo-私有头-MoA-Mopvt-h"><a href="#Mo-私有头-MoA-Mopvt-h" class="headerlink" title="Mo 私有头 MoA_Mopvt.h"></a>Mo 私有头 MoA_Mopvt.h</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;MoA_Moif.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;MoA_Mo.h&quot;</span></span></span><br><span class="line"><span class="comment">// Mo私有局部变量</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	<span class="type">int</span> a;</span><br><span class="line">	<span class="type">int</span> b;</span><br><span class="line">&#125;MoA;</span><br><span class="line"><span class="comment">// 内部复用函数</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">Func3</span><span class="params">(<span class="type">int</span> a, <span class="type">int</span> b)</span>;</span><br><span class="line">STATICINLINE <span class="type">int</span> <span class="title function_">Func2</span><span class="params">()</span>&#123;<span class="keyword">return</span> <span class="number">2</span>;&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="Mo-调度实现-MoA-RMo-c"><a href="#Mo-调度实现-MoA-RMo-c" class="headerlink" title="Mo 调度实现 MoA_RMo.c"></a>Mo 调度实现 MoA_RMo.c</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;MoA_Mopvt.h&quot;</span></span></span><br><span class="line"><span class="type">void</span> <span class="title function_">RInt_MoA</span><span class="params">(<span class="type">void</span>* mo)</span></span><br><span class="line">&#123;</span><br><span class="line">	MoA* me = (MoA*)mo;</span><br><span class="line">	<span class="comment">// Mo通过MO接口零拷贝读写全局</span></span><br><span class="line">	me-&gt;b = RIntMoAGet_Input1();</span><br><span class="line">	RIntMoASet_Output1(me-&gt;a + Func3(<span class="number">1</span>,<span class="number">2</span>));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h4 id="Mo-转发全局变量-MoA-Moif-h"><a href="#Mo-转发全局变量-MoA-Moif-h" class="headerlink" title="Mo 转发全局变量 MoA_Moif.h"></a>Mo 转发全局变量 MoA_Moif.h</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;BD_MOif.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;ModuleA_Exif.h&quot;</span></span></span><br><span class="line">MO_IN(RInt, <span class="type">int</span>, Input1);</span><br><span class="line">MO_OUT(RInt, <span class="type">int</span>, Output1);</span><br></pre></td></tr></table></figure>
+<h3 id="3-Class-算法对象（无调度，禁止访问全局）"><a href="#3-Class-算法对象（无调度，禁止访问全局）" class="headerlink" title="3. Class 算法对象（无调度，禁止访问全局）"></a>3. Class 算法对象（无调度，禁止访问全局）</h3><h4 id="核心特性-2"><a href="#核心特性-2" class="headerlink" title="核心特性"></a>核心特性</h4><p>无调度绑定、无 Get/Set 接口，所有数据依靠 Input/Output 结构体传参；分实例化 Class（每个 Ex/Mo 单独分配）、全局工具 Class（全局变量池单例）。</p>
+<h4 id="ClassA-h-定义"><a href="#ClassA-h-定义" class="headerlink" title="ClassA.h 定义"></a>ClassA.h 定义</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">ifndef</span> CLASSA_H</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> CLASSA_H</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">ClassA</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">	<span class="type">int</span> cfgParam;</span><br><span class="line">	<span class="type">void</span>* local[<span class="number">0</span>]; <span class="comment">// 柔性数组存放私有临时变量</span></span><br><span class="line">&#125;ClassA;</span><br><span class="line"><span class="comment">// 输入输出分离，隔离全局</span></span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span>&#123;</span><span class="type">int</span> i1,i2;&#125; ClassA_Input;</span><br><span class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span>&#123;</span><span class="type">int</span> o1,o2;&#125; ClassA_Output;</span><br><span class="line"><span class="type">void</span>* <span class="title function_">ClassA_Ctor</span><span class="params">()</span>;</span><br><span class="line"><span class="type">int</span> <span class="title function_">ClassA_Do</span><span class="params">(ClassA* me, ClassA_Input* in, ClassA_Output* out)</span>;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br></pre></td></tr></table></figure>
+<h4 id="Class-实现-ClassA-c"><a href="#Class-实现-ClassA-c" class="headerlink" title="Class 实现 ClassA.c"></a>Class 实现 ClassA.c</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;ClassA.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;BD_misc.h&quot;</span></span></span><br><span class="line"><span class="type">void</span>* <span class="title function_">ClassA_Ctor</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="comment">// 从调度静态内存池分配，无运行malloc</span></span><br><span class="line">	<span class="keyword">return</span> BD_Malloc(RInt, <span class="keyword">sizeof</span>(ClassA) + <span class="number">16</span>);</span><br><span class="line">&#125;</span><br><span class="line"><span class="type">int</span> <span class="title function_">ClassA_Do</span><span class="params">(ClassA* me, ClassA_Input* in, ClassA_Output* out)</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="comment">// 仅处理传入参数，无任何全局变量访问</span></span><br><span class="line">	<span class="keyword">if</span>(in-&gt;i1 &gt; <span class="number">0</span>)&#123;</span><br><span class="line">		out-&gt;o1 = in-&gt;i1 * me-&gt;cfgParam;</span><br><span class="line">		out-&gt;o2 = in-&gt;i2;</span><br><span class="line">		<span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="三、全系统变量分类：严格公私隔离、高保密性变量体系"><a href="#三、全系统变量分类：严格公私隔离、高保密性变量体系" class="headerlink" title="三、全系统变量分类：严格公私隔离、高保密性变量体系"></a>三、全系统变量分类：严格公私隔离、高保密性变量体系</h2><p>BD架构设计了强隔离、可库封装、高保密性的双层变量体系，严格区分私有变量与全局共享变量，从语法和架构层面杜绝私有数据泄露，适配固件库封装、商用代码保密场景。所有私有变量完全对内隐藏，仅开放规范的全局交互接口，封装成静态库/动态库后，外部无法访问、篡改内部私有逻辑数据。<br><img src="images/image_3.png" alt="在这里插入图片描述"></p>
+<h3 id="1-Local-局部变量"><a href="#1-Local-局部变量" class="headerlink" title="1. Local 局部变量"></a>1. Local 局部变量</h3><p>存放于调度独立静态内存池，属于完全私有变量，仅对应实例内部可见、外部绝对不可访问，无调度隔离限制，模块内部任意中断均可读写。该类变量是架构保密设计的核心，封装为库后可实现彻底隐藏：</p>
+<ul>
+<li><p>Ex/Mo Local私有变量：存储模块状态机状态、运行过程缓存、临时控制参数，仅当前Ex/Mo实例内部可读写，其他模块、外部工程无任何访问入口；</p>
+</li>
+<li><p>Class算法私有变量：依托柔性数组封装算法中间临时值、算法私有配置参数，完全对外透明，是算法核心逻辑保密的关键。Class无任何全局访问接口，彻底隔离外部篡改风险；</p>
+</li>
+<li><p>库封装保密特性：所有Local、Class私有变量均通过静态内存+模块私有化定义实现，编译封装为库文件后，私有变量内存地址、变量名、逻辑数据完全隐藏，外部无法通过头文件、指针非法读取和篡改，保护核心控制、算法知识产权。</p>
+</li>
+</ul>
+<h3 id="2-全局共享变量（存全局变量池，双核心属性）"><a href="#2-全局共享变量（存全局变量池，双核心属性）" class="headerlink" title="2. 全局共享变量（存全局变量池，双核心属性）"></a>2. 全局共享变量（存全局变量池，双核心属性）</h3><p>全局变量统一分调度存放（RInt_Data.c/ HInt_Data.c），每个变量同时具备<strong>调度属性</strong>、<strong>Ex 归属属性</strong>。</p>
+<h4 id="调度属性示例-RInt-Data-c"><a href="#调度属性示例-RInt-Data-c" class="headerlink" title="调度属性示例 RInt_Data.c"></a>调度属性示例 RInt_Data.c</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;global.h&quot;</span></span></span><br><span class="line"><span class="comment">// RInt调度专属全局副本，和HInt内存完全隔离</span></span><br><span class="line"><span class="type">int</span> RInt_Input1[AXISSUM];</span><br><span class="line"><span class="type">int</span> RInt_Output1[AXISSUM];</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>调度隔离规则：业务代码禁止跨调度读写，仅同步函数可批量拷贝；</p>
+</li>
+<li><p>模块归属：所有变量归属 Ex，Mo 仅转发，无权新增。</p>
+</li>
+</ul>
+<h2 id="四、全局变量池与零拷贝访问完整原理-代码"><a href="#四、全局变量池与零拷贝访问完整原理-代码" class="headerlink" title="四、全局变量池与零拷贝访问完整原理 + 代码"></a>四、全局变量池与零拷贝访问完整原理 + 代码</h2><h3 id="1-全局变量池作用"><a href="#1-全局变量池作用" class="headerlink" title="1. 全局变量池作用"></a>1. 全局变量池作用</h3><p>全局静态数组作为统一中间层，所有 Ex 数据流互通介质，模块间无代码依赖，仅通过池下标映射通信。</p>
+<h3 id="2-零拷贝底层宏实现（BD-EXif-h-核心宏）"><a href="#2-零拷贝底层宏实现（BD-EXif-h-核心宏）" class="headerlink" title="2. 零拷贝底层宏实现（BD_EXif.h 核心宏）"></a>2. 零拷贝底层宏实现（BD_EXif.h 核心宏）</h3><p>依靠<code>STATICINLINE</code>+ 字符串拼接宏，编译期内联展开，无函数跳转、无栈拷贝。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> STATICINLINE static __inline</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> _EX_IN(loop, type, myvar, globalvar) \</span></span><br><span class="line"><span class="meta">	extern type globalvar[]; \</span></span><br><span class="line"><span class="meta">	STATICINLINE type STR(,Ex, Get_, myvar,)() &#123; return globalvar[loop_nth[loop]]; &#125; \</span></span><br><span class="line"><span class="meta">	extern type globalvar[]</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> EX_IN(RInt, int, Input1)</span></span><br></pre></td></tr></table></figure>
+<h4 id="宏展开后等效代码（完全无拷贝）"><a href="#宏展开后等效代码（完全无拷贝）" class="headerlink" title="宏展开后等效代码（完全无拷贝）"></a>宏展开后等效代码（完全无拷贝）</h4><p>强制内联属性取决于编译器，不同编译器不同<br><img src="images/image_4.png" alt="在这里插入图片描述"><br><img src="images/image_5.png" alt="在这里插入图片描述"></p>
+<h3 id="Mo-双层内联转发，无额外开销"><a href="#Mo-双层内联转发，无额外开销" class="headerlink" title="Mo 双层内联转发，无额外开销"></a>Mo 双层内联转发，无额外开销</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">define</span> _MO_IN(loop, type, myvar, exvar) \</span></span><br><span class="line"><span class="meta">STATICINLINE type STR(,Mo, Get_, myvar,)() &#123; return STR(,Ex, Get_, exvar,)(); &#125;</span></span><br></pre></td></tr></table></figure>
+<p>编译后两层 inline 全部展开，最终等价直接操作全局数组，性能和裸写一致，同时拥有权限管控。<br><img src="images/image_6.png" alt="在这里插入图片描述"></p>
+<h2 id="五、调度间变量同步机制"><a href="#五、调度间变量同步机制" class="headerlink" title="五、调度间变量同步机制"></a>五、调度间变量同步机制</h2><p><img src="images/image_7.png" alt="在这里插入图片描述"></p>
+<p>不同调度全局副本独立，跨调度数据仅在中断头尾统一同步，业务代码禁止跨调度 Get/Set。</p>
+<h3 id="1-同步函数矩阵-trans-c"><a href="#1-同步函数矩阵-trans-c" class="headerlink" title="1. 同步函数矩阵 trans.c"></a>1. 同步函数矩阵 trans.c</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 双向同步函数声明</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">HInt2RInt</span><span class="params">()</span>;</span><br><span class="line"><span class="type">void</span> <span class="title function_">RInt2HInt</span><span class="params">()</span>;</span><br><span class="line"><span class="type">uint8_t</span> tranFlag[LoopNum - <span class="number">1</span>][LoopNum - <span class="number">2</span>];</span><br><span class="line"><span class="type">void</span>(*tranFun[LoopNum - <span class="number">1</span>][LoopNum - <span class="number">2</span>])() = &#123;</span><br><span class="line">	&#123; HInt2RInt, HInt2FInt, HInt2SInt &#125;,</span><br><span class="line">	&#123; RInt2HInt, RInt2FInt, RInt2SInt &#125;,</span><br><span class="line">&#125;;</span><br><span class="line"><span class="comment">// 统一中断生成宏</span></span><br><span class="line"><span class="meta">#<span class="keyword">define</span> INT_HANDLER(loop, loopcallback) \</span></span><br><span class="line"><span class="meta">void loop_Handler() &#123; \</span></span><br><span class="line"><span class="meta">	<span class="comment">// 1. 先同步慢调度数据到当前调度</span></span></span><br><span class="line">	<span class="keyword">for</span>(<span class="type">int32_t</span> slower = LoopNum<span class="number">-2</span>; slower&gt;loop<span class="number">-1</span>;slower--)&#123;</span><br><span class="line">		<span class="keyword">if</span>(!tranFlag[slower][loop<span class="number">-1</span>])&#123;</span><br><span class="line">			tranFun[slower][loop<span class="number">-1</span>]();</span><br><span class="line">			tranFlag[slower][loop<span class="number">-1</span>] = <span class="number">1</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">// 2. 执行本调度所有Ex业务</span></span><br><span class="line">	loopcallback();</span><br><span class="line">	<span class="comment">// 3. 当前调度同步至所有低速调度</span></span><br><span class="line">	<span class="keyword">for</span>(<span class="type">int32_t</span> slower = LoopNum<span class="number">-2</span>; slower&gt;loop<span class="number">-1</span>;slower--)&#123;</span><br><span class="line">		<span class="keyword">if</span>(!tranFlag[loop<span class="number">-1</span>][slower<span class="number">-1</span>])&#123;</span><br><span class="line">			tranFun[loop<span class="number">-1</span>][slower<span class="number">-1</span>]();</span><br><span class="line">			tranFlag[loop<span class="number">-1</span>][slower<span class="number">-1</span>] = <span class="number">1</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 生成各级中断入口</span></span><br><span class="line">INT_HANDLER(HInt, HIntHandler);</span><br><span class="line">INT_HANDLER(RInt, RIntHandler);</span><br></pre></td></tr></table></figure>
+<h3 id="2-同步函数示例（跨调度批量拷贝，唯一合法跨数据操作）"><a href="#2-同步函数示例（跨调度批量拷贝，唯一合法跨数据操作）" class="headerlink" title="2. 同步函数示例（跨调度批量拷贝，唯一合法跨数据操作）"></a>2. 同步函数示例（跨调度批量拷贝，唯一合法跨数据操作）</h3><p><img src="images/image_8.png" alt="在这里插入图片描述"></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> <span class="title function_">RInt2HInt</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="type">exnum_t</span> axis = <span class="number">0</span>;</span><br><span class="line">	<span class="comment">// 批量同步RInt全局副本到HInt，仅此处跨调度读写全局</span></span><br><span class="line">	HInt_Input1[axis] = RInt_Input1[axis];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="六、配置文件管理-Ex：实例化、数据流、优先级"><a href="#六、配置文件管理-Ex：实例化、数据流、优先级" class="headerlink" title="六、配置文件管理 Ex：实例化、数据流、优先级"></a>六、配置文件管理 Ex：实例化、数据流、优先级</h2><p>配置文件仅管理 Ex，Mo/Class 仍在 C 代码内手动创建；通过<code>.zbc</code>配置 + Python 脚本自动生成实例代码、调度入口、初始化逻辑。</p>
+<h3 id="1-配置文件-ModuleA-zbc"><a href="#1-配置文件-ModuleA-zbc" class="headerlink" title="1. 配置文件 ModuleA.zbc"></a>1. 配置文件 ModuleA.zbc</h3><figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">// 定义Ex模板：声明输入输出全局变量</span><br><span class="line">MODULE(ModuleA)</span><br><span class="line">INPUTVAR(Input1, int)</span><br><span class="line">INPUTVAR(Input2, int)</span><br><span class="line">OUTPUTVAR(Output1, int)</span><br><span class="line">OUTPUTVAR(Output2, int)</span><br><span class="line"></span><br><span class="line">// 创建Ex实例f1（单轴实例），绑定全局池下标</span><br><span class="line">CREATE(ModuleA, f1)</span><br><span class="line">LINKINPUT(Input1, RInt_Input1)</span><br><span class="line">LINKINPUT(Input2, DataPool[7])</span><br><span class="line">LINKOUTPUT(Output1, RInt_Output1)</span><br><span class="line">LINKOUTPUT(Output2, DataPool[9])</span><br><span class="line">// Fast/Slow/Main三级调度优先级</span><br><span class="line">PRIORITY(100, 200, 400)</span><br></pre></td></tr></table></figure>
+<h3 id="2-脚本自动生成实例代码-ModuleA-f1-c"><a href="#2-脚本自动生成实例代码-ModuleA-f1-c" class="headerlink" title="2. 脚本自动生成实例代码 ModuleA_f1.c"></a>2. 脚本自动生成实例代码 ModuleA_f1.c</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//generated by create_instance.py DO NOT EDIT</span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;ModuleA.h&quot;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&quot;DataPool.h&quot;</span></span></span><br><span class="line">CREATE(ModuleA, f1)</span><br><span class="line">LINKINPUT(Input1, RInt_Input1)</span><br><span class="line">LINKINPUT(Input2, DataPool[<span class="number">7</span>])</span><br><span class="line">LINKOUTPUT(Output1, RInt_Output1)</span><br><span class="line">LINKOUTPUT(Output2, DataPool[<span class="number">9</span>])</span><br><span class="line">PRIORITY(<span class="number">100</span>, <span class="number">200</span>, <span class="number">400</span>)</span><br><span class="line"></span><br><span class="line">Input ModuleA_f1_Input = &#123;</span><br><span class="line">	.Input1 = &amp;RInt_Input1,</span><br><span class="line">	.Input2 = &amp;DataPool[<span class="number">7</span>],</span><br><span class="line">&#125;;</span><br><span class="line">Output ModuleA_f1_Output = &#123;</span><br><span class="line">	.Output1 = &amp;RInt_Output1,</span><br><span class="line">	.Output2 = &amp;DataPool[<span class="number">9</span>],</span><br><span class="line">&#125;;</span><br><span class="line">Module ModuleA_f1 = &#123;</span><br><span class="line">	.varInput = &amp;ModuleA_f1_Input,</span><br><span class="line">	.varOutput = &amp;ModuleA_f1_Output,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<h3 id="3-总调度自动生成-Schedule-c"><a href="#3-总调度自动生成-Schedule-c" class="headerlink" title="3. 总调度自动生成 Schedule.c"></a>3. 总调度自动生成 Schedule.c</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">extern</span> Module ModuleA_f1;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span> <span class="title function_">Init</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">	<span class="keyword">if</span>(!Init_ModuleA(&amp;ModuleA_f1)) <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">	<span class="keyword">return</span> <span class="number">1</span>;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 按配置优先级自动排序执行</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">FastLoop</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">	FastLoop_ModuleA(&amp;ModuleA_f1);</span><br><span class="line">&#125;</span><br><span class="line"><span class="type">void</span> <span class="title function_">SlowLoop</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">	SlowLoop_ModuleA(&amp;ModuleA_f1);</span><br><span class="line">&#125;</span><br><span class="line"><span class="type">void</span> <span class="title function_">MainLoop</span><span class="params">()</span></span><br><span class="line">&#123;</span><br><span class="line">	MainLoop_ModuleA(&amp;ModuleA_f1);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="4-数据流解耦效果"><a href="#4-数据流解耦效果" class="headerlink" title="4. 数据流解耦效果"></a>4. 数据流解耦效果</h3><p>类似于simulink连线，但是并不是Ex间互连，而是两边连到全局数据池中。<br>若需要 ModuleA 输出给 ModuleB 输入，仅修改两份.zbc 配置，绑定同一个全局池变量：</p>
+<ul>
+<li><p>ModuleA：<code>LINKOUTPUT(Output1, RInt_Output1)</code></p>
+</li>
+<li><p>ModuleB：<code>LINKINPUT(Input1, RInt_Output1)</code></p>
+</li>
+</ul>
+<p>无需修改任何 Ex 业务 C 代码，实现无耦合数据流。</p>
+<h2 id="七、静态内存分配-BD-Malloc"><a href="#七、静态内存分配-BD-Malloc" class="headerlink" title="七、静态内存分配 BD_Malloc"></a>七、静态内存分配 BD_Malloc</h2><p><img src="images/image_9.png" alt="在这里插入图片描述"></p>
+<p>全程放弃标准 malloc，预分配调度静态内存池（相当于静态heap），开机 Ctor 一次性分配模块的Local变量、Class内存以及句柄（指向模块实例的void*），无堆碎片。</p>
+<h3 id="BD-misc-c-底层内存管理"><a href="#BD-misc-c-底层内存管理" class="headerlink" title="BD_misc.c 底层内存管理"></a>BD_misc.c 底层内存管理</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 各调度预分配静态内存数组</span></span><br><span class="line">byte _LocalArrayHInt[_HIntSize];</span><br><span class="line">byte _LocalArrayRInt[_RIntSize];</span><br><span class="line">byte* _LocalVarMemory[LoopNum<span class="number">-1</span>] = &#123;_LocalArrayHInt, _LocalArrayRInt&#125;;</span><br><span class="line"><span class="type">int</span> _LocalVarCount[LoopNum - <span class="number">1</span>] = &#123;<span class="number">0</span>&#125;;</span><br><span class="line"></span><br><span class="line"><span class="type">void</span>* <span class="title function_">BD_Malloc</span><span class="params">(Loop loop, <span class="type">int</span> size)</span></span><br><span class="line">&#123;</span><br><span class="line">	loop -= <span class="number">1</span>;</span><br><span class="line">	<span class="comment">// 4字节对齐</span></span><br><span class="line">	size = (size + <span class="number">3</span>) &gt;&gt; <span class="number">2</span> &lt;&lt; <span class="number">2</span>;</span><br><span class="line">	<span class="keyword">if</span>(_LocalVarCount[loop] + size &gt; _LocalVarMaxSize[loop])&#123;</span><br><span class="line">		<span class="keyword">return</span> _BD_Malloc_ErrorHandle(loop, _LocalVarCount[loop], _LocalVarMaxSize[loop]);</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="type">void</span>* ptr = &amp;_LocalVarMemory[loop][_LocalVarCount[loop]];</span><br><span class="line">	_LocalVarCount[loop] += size;</span><br><span class="line">	<span class="keyword">return</span> ptr;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>所有 Ex/Mo/Class 的 Ctor 均调用此接口，内存分配全部集中在上电初始化阶段，中断运行阶段无任何内存操作，保证抖动极低。</p>
+<h2 id="八、架构整体核心优势"><a href="#八、架构整体核心优势" class="headerlink" title="八、架构整体核心优势"></a>八、架构整体核心优势</h2><ol>
+<li><p><strong>硬实时确定性</strong>：静态内存无运行分配、跨调度数据固定时序同步，中断抖动可控；</p>
+</li>
+<li><p><strong>零拷贝高性能</strong>：强制内联宏消除函数开销，16K 高速中断无性能损耗；</p>
+</li>
+<li><p><strong>分层极致解耦</strong>：Class 完全隔离全局，支持 PC 仿真、单元测试；Ex/Mo 分层隔离减少全局标志耦合；</p>
+</li>
+<li><p><strong>配置驱动易维护</strong>：Ex 实例、数据流连线、调度优先级全部配置化，改逻辑连线无需修改业务代码；</p>
+</li>
+<li><p><strong>多轴原生支持</strong>：配置批量生成多 Ex 实例，一套控制逻辑适配多路电机；</p>
+</li>
+<li><p><strong>语法层安全管控</strong>：输入双层 const 只读、全局变量调度隔离，编译期拦截非法读写。</p>
+</li>
+</ol>
+<h2 id="九、现存可优化方向"><a href="#九、现存可优化方向" class="headerlink" title="九、现存可优化方向"></a>九、现存可优化方向</h2><ol>
+<li><p>当前 Ex\Mo 并不是标准状态机，可优化为事件驱动 UML 状态机；</p>
+</li>
+<li><p>补充完整 PC 无硬件仿真工具链，脱离 MCU 调试算法；</p>
+</li>
+<li><p>完善事件触发机制，提供一些调度安全的基础设施，诸如信号量。</p>
+</li>
+<li><p>拓展代码生成脚本，自动生成模块间变量连线图。</p>
+</li>
+</ol>
+<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>BD 是一套面向 RMS 裸机硬实时控制设备的工程化 C 架构，所有设计均针对高抖动敏感、多中断并发、多轴复用、长期迭代维护等工业嵌入式痛点落地。依靠三层模块划分、调度隔离全局池、宏零拷贝访问、标准化跨调度同步、配置自动化五大核心能力，为时序严苛的运动控制类固件提供一套标准化、可规模化落地的开发规范。</p>
+<h2 id="附：相关资料下载"><a href="#附：相关资料下载" class="headerlink" title="附：相关资料下载"></a>附：相关资料下载</h2><div style="width:260px;border:1px solid #eee;border-radius:10px;padding:30px 20px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,0.06);float:left;margin-right:20px;margin-bottom:20px;">
+  <a href="files/BDV2.2.zip" target="_blank" style="text-decoration:none;color:#2196f3;">
+    <i class="fas fa-file-archive" style="font-size:60px;"></i>
+    <p style="margin:12px 0 0 0;font-size:15px;">BDV2.2.zip</p>
+  </a>
+</div>
+
+<div style="width:260px;border:1px solid #eee;border-radius:10px;padding:30px 20px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,0.06);float:left;margin-right:20px;margin-bottom:20px;">
+  <a href="files/BD介绍.pptx" target="_blank" style="text-decoration:none;color:#2196f3;">
+    <i class="fas fa-file-powerpoint" style="font-size:60px;"></i>
+    <p style="margin:12px 0 0 0;font-size:15px;">BD介绍.pptx</p>
+  </a>
+</div>
+
+<div style="width:260px;border:1px solid #eee;border-radius:10px;padding:30px 20px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,0.06);float:left;margin-bottom:20px;">
+  <a href="files/配置文件自动生成demo.zip" target="_blank" style="text-decoration:none;color:#2196f3;">
+    <i class="fas fa-file-archive" style="font-size:60px;"></i>
+    <p style="margin:12px 0 0 0;font-size:15px;">配置文件自动生成demo.zip</p>
+  </a>
+</div>
+
+<div style="clear:both;"></div></article><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E8%BF%90%E5%8A%A8%E6%8E%A7%E5%88%B6/">运动控制</a><a class="post-meta__tags" href="/tags/%E7%A1%AC%E5%AE%9E%E6%97%B6/">硬实时</a><a class="post-meta__tags" href="/tags/%E8%A3%B8%E6%9C%BA%E7%B3%BB%E7%BB%9F/">裸机系统</a><a class="post-meta__tags" href="/tags/%E5%B5%8C%E5%85%A5%E5%BC%8F%E6%9E%B6%E6%9E%84/">嵌入式架构</a></div><div class="post-share"><div class="social-share" data-image="/2024/07/04/BD%E7%A1%AC%E5%AE%9E%E6%97%B6%E8%A3%B8%E6%9C%BA%E6%9E%B6%E6%9E%84/.%5Cimages%5Cimage_6.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2024/07/25/ZBC-SimpleBGC%E6%BB%A4%E6%B3%A2%E5%99%A8%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" title="SimpleBGC滤波器源码阅读"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">SimpleBGC滤波器源码阅读</div></div><div class="info-2"><div class="info-item-1">SimpleBGC开源云台项目中一阶低通滤波、互补滤波的源码分析与公式推导</div></div></div></a><a class="pagination-related  no-desc" href="/2024/07/04/6-HTRT%E5%85%AD%E8%87%AA%E7%94%B1%E5%BA%A6%E5%B9%B6%E8%81%94%E6%9C%BA%E5%99%A8%E4%BA%BA/" title="6-HTRT六自由度并联机器人"><img class="cover" src="/2024/07/04/6-HTRT%E5%85%AD%E8%87%AA%E7%94%B1%E5%BA%A6%E5%B9%B6%E8%81%94%E6%9C%BA%E5%99%A8%E4%BA%BA/.%5Cimages%5C6HTRT.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">6-HTRT六自由度并联机器人</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/04/20/ZBC-%E6%97%A0%E7%90%86%E6%95%B0%E9%98%88%E5%80%BC%E6%B3%95%E6%89%93%E7%A0%B4DDA%E6%9E%81%E9%99%90%E7%8E%AF/" title="用无理数阈值法解决伺服余数插补极限环抖动"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-04-20</div><div class="info-item-2">用无理数阈值法解决伺服余数插补极限环抖动</div></div><div class="info-2"><div class="info-item-1">通过动态无理数阈值打破传统DDA余数累加的周期性极限环</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/dog-icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">BeichenZhuo</div><div class="author-info-description">伺服&机器人技术笔记</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">51</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">120</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/BeichenZhuo"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">email：1435148110@qq.com</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E9%80%82%E7%94%A8%E5%9C%BA%E6%99%AF%E6%A0%B8%E5%BF%83%E7%BA%A6%E6%9D%9F"><span class="toc-number">2.</span> <span class="toc-text">一、适用场景核心约束</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%80%82%E9%85%8D%E5%9C%BA%E6%99%AF"><span class="toc-number">2.1.</span> <span class="toc-text">适配场景</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E4%B8%89%E5%B1%82%E6%A8%A1%E5%9D%97%E5%88%86%E5%B1%82%E4%BD%93%E7%B3%BB%EF%BC%88%E8%B0%83%E5%BA%A6%E5%B1%9E%E6%80%A7-%E4%BB%A3%E7%A0%81%E7%A4%BA%E4%BE%8B%EF%BC%89"><span class="toc-number">3.</span> <span class="toc-text">二、三层模块分层体系（调度属性 + 代码示例）</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Ex-%E9%A1%B6%E5%B1%82%E6%B5%81%E7%A8%8B%E6%A8%A1%E5%9D%97%EF%BC%88%E6%9C%89%E8%B0%83%E5%BA%A6%EF%BC%8C%E5%85%A8%E5%B1%80%E5%8F%98%E9%87%8F%E6%89%80%E6%9C%89%E8%80%85%EF%BC%89"><span class="toc-number">3.1.</span> <span class="toc-text">1. Ex 顶层流程模块（有调度，全局变量所有者）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%A0%B8%E5%BF%83%E7%89%B9%E6%80%A7"><span class="toc-number">3.1.1.</span> <span class="toc-text">核心特性</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Mo-%E5%AD%90%E6%B5%81%E7%A8%8B%E6%A8%A1%E5%9D%97%EF%BC%88%E6%9C%89%E8%B0%83%E5%BA%A6%EF%BC%8C%E4%BB%85%E8%BD%AC%E5%8F%91%E5%85%A8%E5%B1%80%E5%8F%98%E9%87%8F%EF%BC%89"><span class="toc-number">3.2.</span> <span class="toc-text">2. Mo 子流程模块（有调度，仅转发全局变量）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%A0%B8%E5%BF%83%E7%89%B9%E6%80%A7-1"><span class="toc-number">3.2.1.</span> <span class="toc-text">核心特性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Mo-%E7%A7%81%E6%9C%89%E5%A4%B4-MoA-Mopvt-h"><span class="toc-number">3.2.2.</span> <span class="toc-text">Mo 私有头 MoA_Mopvt.h</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Mo-%E8%B0%83%E5%BA%A6%E5%AE%9E%E7%8E%B0-MoA-RMo-c"><span class="toc-number">3.2.3.</span> <span class="toc-text">Mo 调度实现 MoA_RMo.c</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Mo-%E8%BD%AC%E5%8F%91%E5%85%A8%E5%B1%80%E5%8F%98%E9%87%8F-MoA-Moif-h"><span class="toc-number">3.2.4.</span> <span class="toc-text">Mo 转发全局变量 MoA_Moif.h</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Class-%E7%AE%97%E6%B3%95%E5%AF%B9%E8%B1%A1%EF%BC%88%E6%97%A0%E8%B0%83%E5%BA%A6%EF%BC%8C%E7%A6%81%E6%AD%A2%E8%AE%BF%E9%97%AE%E5%85%A8%E5%B1%80%EF%BC%89"><span class="toc-number">3.3.</span> <span class="toc-text">3. Class 算法对象（无调度，禁止访问全局）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E6%A0%B8%E5%BF%83%E7%89%B9%E6%80%A7-2"><span class="toc-number">3.3.1.</span> <span class="toc-text">核心特性</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#ClassA-h-%E5%AE%9A%E4%B9%89"><span class="toc-number">3.3.2.</span> <span class="toc-text">ClassA.h 定义</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#Class-%E5%AE%9E%E7%8E%B0-ClassA-c"><span class="toc-number">3.3.3.</span> <span class="toc-text">Class 实现 ClassA.c</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E5%85%A8%E7%B3%BB%E7%BB%9F%E5%8F%98%E9%87%8F%E5%88%86%E7%B1%BB%EF%BC%9A%E4%B8%A5%E6%A0%BC%E5%85%AC%E7%A7%81%E9%9A%94%E7%A6%BB%E3%80%81%E9%AB%98%E4%BF%9D%E5%AF%86%E6%80%A7%E5%8F%98%E9%87%8F%E4%BD%93%E7%B3%BB"><span class="toc-number">4.</span> <span class="toc-text">三、全系统变量分类：严格公私隔离、高保密性变量体系</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Local-%E5%B1%80%E9%83%A8%E5%8F%98%E9%87%8F"><span class="toc-number">4.1.</span> <span class="toc-text">1. Local 局部变量</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%85%A8%E5%B1%80%E5%85%B1%E4%BA%AB%E5%8F%98%E9%87%8F%EF%BC%88%E5%AD%98%E5%85%A8%E5%B1%80%E5%8F%98%E9%87%8F%E6%B1%A0%EF%BC%8C%E5%8F%8C%E6%A0%B8%E5%BF%83%E5%B1%9E%E6%80%A7%EF%BC%89"><span class="toc-number">4.2.</span> <span class="toc-text">2. 全局共享变量（存全局变量池，双核心属性）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%B0%83%E5%BA%A6%E5%B1%9E%E6%80%A7%E7%A4%BA%E4%BE%8B-RInt-Data-c"><span class="toc-number">4.2.1.</span> <span class="toc-text">调度属性示例 RInt_Data.c</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E5%85%A8%E5%B1%80%E5%8F%98%E9%87%8F%E6%B1%A0%E4%B8%8E%E9%9B%B6%E6%8B%B7%E8%B4%9D%E8%AE%BF%E9%97%AE%E5%AE%8C%E6%95%B4%E5%8E%9F%E7%90%86-%E4%BB%A3%E7%A0%81"><span class="toc-number">5.</span> <span class="toc-text">四、全局变量池与零拷贝访问完整原理 + 代码</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%85%A8%E5%B1%80%E5%8F%98%E9%87%8F%E6%B1%A0%E4%BD%9C%E7%94%A8"><span class="toc-number">5.1.</span> <span class="toc-text">1. 全局变量池作用</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E9%9B%B6%E6%8B%B7%E8%B4%9D%E5%BA%95%E5%B1%82%E5%AE%8F%E5%AE%9E%E7%8E%B0%EF%BC%88BD-EXif-h-%E6%A0%B8%E5%BF%83%E5%AE%8F%EF%BC%89"><span class="toc-number">5.2.</span> <span class="toc-text">2. 零拷贝底层宏实现（BD_EXif.h 核心宏）</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E5%AE%8F%E5%B1%95%E5%BC%80%E5%90%8E%E7%AD%89%E6%95%88%E4%BB%A3%E7%A0%81%EF%BC%88%E5%AE%8C%E5%85%A8%E6%97%A0%E6%8B%B7%E8%B4%9D%EF%BC%89"><span class="toc-number">5.2.1.</span> <span class="toc-text">宏展开后等效代码（完全无拷贝）</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Mo-%E5%8F%8C%E5%B1%82%E5%86%85%E8%81%94%E8%BD%AC%E5%8F%91%EF%BC%8C%E6%97%A0%E9%A2%9D%E5%A4%96%E5%BC%80%E9%94%80"><span class="toc-number">5.3.</span> <span class="toc-text">Mo 双层内联转发，无额外开销</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E8%B0%83%E5%BA%A6%E9%97%B4%E5%8F%98%E9%87%8F%E5%90%8C%E6%AD%A5%E6%9C%BA%E5%88%B6"><span class="toc-number">6.</span> <span class="toc-text">五、调度间变量同步机制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%90%8C%E6%AD%A5%E5%87%BD%E6%95%B0%E7%9F%A9%E9%98%B5-trans-c"><span class="toc-number">6.1.</span> <span class="toc-text">1. 同步函数矩阵 trans.c</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%90%8C%E6%AD%A5%E5%87%BD%E6%95%B0%E7%A4%BA%E4%BE%8B%EF%BC%88%E8%B7%A8%E8%B0%83%E5%BA%A6%E6%89%B9%E9%87%8F%E6%8B%B7%E8%B4%9D%EF%BC%8C%E5%94%AF%E4%B8%80%E5%90%88%E6%B3%95%E8%B7%A8%E6%95%B0%E6%8D%AE%E6%93%8D%E4%BD%9C%EF%BC%89"><span class="toc-number">6.2.</span> <span class="toc-text">2. 同步函数示例（跨调度批量拷贝，唯一合法跨数据操作）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E7%AE%A1%E7%90%86-Ex%EF%BC%9A%E5%AE%9E%E4%BE%8B%E5%8C%96%E3%80%81%E6%95%B0%E6%8D%AE%E6%B5%81%E3%80%81%E4%BC%98%E5%85%88%E7%BA%A7"><span class="toc-number">7.</span> <span class="toc-text">六、配置文件管理 Ex：实例化、数据流、优先级</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6-ModuleA-zbc"><span class="toc-number">7.1.</span> <span class="toc-text">1. 配置文件 ModuleA.zbc</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E8%84%9A%E6%9C%AC%E8%87%AA%E5%8A%A8%E7%94%9F%E6%88%90%E5%AE%9E%E4%BE%8B%E4%BB%A3%E7%A0%81-ModuleA-f1-c"><span class="toc-number">7.2.</span> <span class="toc-text">2. 脚本自动生成实例代码 ModuleA_f1.c</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E6%80%BB%E8%B0%83%E5%BA%A6%E8%87%AA%E5%8A%A8%E7%94%9F%E6%88%90-Schedule-c"><span class="toc-number">7.3.</span> <span class="toc-text">3. 总调度自动生成 Schedule.c</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E6%95%B0%E6%8D%AE%E6%B5%81%E8%A7%A3%E8%80%A6%E6%95%88%E6%9E%9C"><span class="toc-number">7.4.</span> <span class="toc-text">4. 数据流解耦效果</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%83%E3%80%81%E9%9D%99%E6%80%81%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D-BD-Malloc"><span class="toc-number">8.</span> <span class="toc-text">七、静态内存分配 BD_Malloc</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#BD-misc-c-%E5%BA%95%E5%B1%82%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86"><span class="toc-number">8.1.</span> <span class="toc-text">BD_misc.c 底层内存管理</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AB%E3%80%81%E6%9E%B6%E6%9E%84%E6%95%B4%E4%BD%93%E6%A0%B8%E5%BF%83%E4%BC%98%E5%8A%BF"><span class="toc-number">9.</span> <span class="toc-text">八、架构整体核心优势</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B9%9D%E3%80%81%E7%8E%B0%E5%AD%98%E5%8F%AF%E4%BC%98%E5%8C%96%E6%96%B9%E5%90%91"><span class="toc-number">10.</span> <span class="toc-text">九、现存可优化方向</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BB%93%E8%AF%AD"><span class="toc-number">11.</span> <span class="toc-text">结语</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%99%84%EF%BC%9A%E7%9B%B8%E5%85%B3%E8%B5%84%E6%96%99%E4%B8%8B%E8%BD%BD"><span class="toc-number">12.</span> <span class="toc-text">附：相关资料下载</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/07/18/Albu%E5%8D%9A%E5%A3%AB%E8%AE%BA%E6%96%87/" title="以 DLR 轻型机器人为例的弹性关节机器人控制————Alin Albu-Schäffer博士论文">以 DLR 轻型机器人为例的弹性关节机器人控制————Alin Albu-Schäffer博士论文</a><time datetime="2026-07-05T10:07:00.508Z" title="更新于 2026-07-05 18:07:00">2026-07-05</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/07/04/BD%E7%A1%AC%E5%AE%9E%E6%97%B6%E8%A3%B8%E6%9C%BA%E6%9E%B6%E6%9E%84/" title="BD硬实时裸机架构——个人理解最优解决方案"><img src="/2024/07/04/BD%E7%A1%AC%E5%AE%9E%E6%97%B6%E8%A3%B8%E6%9C%BA%E6%9E%B6%E6%9E%84/.%5Cimages%5Cimage_6.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="BD硬实时裸机架构——个人理解最优解决方案"/></a><div class="content"><a class="title" href="/2024/07/04/BD%E7%A1%AC%E5%AE%9E%E6%97%B6%E8%A3%B8%E6%9C%BA%E6%9E%B6%E6%9E%84/" title="BD硬实时裸机架构——个人理解最优解决方案">BD硬实时裸机架构——个人理解最优解决方案</a><time datetime="2026-07-04T15:27:52.691Z" title="更新于 2026-07-04 23:27:52">2026-07-04</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2024/07/04/6-HTRT%E5%85%AD%E8%87%AA%E7%94%B1%E5%BA%A6%E5%B9%B6%E8%81%94%E6%9C%BA%E5%99%A8%E4%BA%BA/" title="6-HTRT六自由度并联机器人"><img src="/2024/07/04/6-HTRT%E5%85%AD%E8%87%AA%E7%94%B1%E5%BA%A6%E5%B9%B6%E8%81%94%E6%9C%BA%E5%99%A8%E4%BA%BA/.%5Cimages%5C6HTRT.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="6-HTRT六自由度并联机器人"/></a><div class="content"><a class="title" href="/2024/07/04/6-HTRT%E5%85%AD%E8%87%AA%E7%94%B1%E5%BA%A6%E5%B9%B6%E8%81%94%E6%9C%BA%E5%99%A8%E4%BA%BA/" title="6-HTRT六自由度并联机器人">6-HTRT六自由度并联机器人</a><time datetime="2026-07-04T09:17:31.656Z" title="更新于 2026-07-04 17:17:31">2026-07-04</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/07/03/ZBC-%E4%BC%BA%E6%9C%8D%E7%B3%BB%E7%BB%9F%E8%BE%A8%E8%AF%86%E5%9B%9B%E5%A4%A7%E6%BF%80%E5%8A%B1%E6%B7%B1%E5%BA%A6%E5%AF%B9%E6%AF%94/" title="对比四种系统激励方式：正弦定点、Chirp扫频、PRBS伪随机、锤击法">对比四种系统激励方式：正弦定点、Chirp扫频、PRBS伪随机、锤击法</a><time datetime="2026-07-03T07:28:33.147Z" title="更新于 2026-07-03 15:28:33">2026-07-03</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/07/03/ZBC-%E4%BC%AA%E9%9A%8F%E6%9C%BA%E5%BA%8F%E5%88%97PRBS%E4%B8%8EDeBruijn%E5%AF%B9%E6%AF%94/" title="伪随机序列：PRBS(M序列) vs De Bruijn序列">伪随机序列：PRBS(M序列) vs De Bruijn序列</a><time datetime="2026-07-03T07:18:07.681Z" title="更新于 2026-07-03 15:18:07">2026-07-03</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2023 - 2026 By BeichenZhuo</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.5</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.5"></script><script src="/js/main.js?v=5.5.5"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.1.2/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const parseViewBox = viewBox => {
+    if (!viewBox) return null
+    const parts = viewBox.trim().split(/[\s,]+/).map(n => Number(n))
+    if (parts.length !== 4 || parts.some(n => Number.isNaN(n))) return null
+    return parts
+  }
+
+  const getSvgViewBox = svg => {
+    const attr = parseViewBox(svg.getAttribute('viewBox'))
+    if (attr) return attr
+
+    // Fallback: use bbox to build a viewBox
+    try {
+      const bbox = svg.getBBox()
+      if (bbox && bbox.width && bbox.height) return [bbox.x, bbox.y, bbox.width, bbox.height]
+    } catch (e) {
+      // getBBox may fail on some edge cases; ignore
+    }
+
+    const w = Number(svg.getAttribute('width')) || 0
+    const h = Number(svg.getAttribute('height')) || 0
+    if (w > 0 && h > 0) return [0, 0, w, h]
+    return [0, 0, 100, 100]
+  }
+
+  const setSvgViewBox = (svg, vb) => {
+    svg.setAttribute('viewBox', `${vb[0]} ${vb[1]} ${vb[2]} ${vb[3]}`)
+  }
+
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
+
+  const openSvgInNewTab = ({ source, initViewBox }) => {
+    const getClonedSvg = () => {
+      if (typeof source === 'string') {
+        const template = document.createElement('template')
+        template.innerHTML = source.trim()
+        const svg = template.content.querySelector('svg')
+        return svg ? svg.cloneNode(true) : null
+      }
+      if (source && typeof source.cloneNode === 'function') {
+        return source.cloneNode(true)
+      }
+      return null
+    }
+
+    const clone = getClonedSvg()
+    if (!clone) return
+    if (initViewBox && initViewBox.length === 4) {
+      clone.setAttribute('viewBox', initViewBox.join(' '))
+    }
+    if (!clone.getAttribute('xmlns')) clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+    if (!clone.getAttribute('xmlns:xlink') && clone.outerHTML.includes('xlink:')) {
+      clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
+    }
+    // inject background to match current theme
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
+    const bg = getComputedStyle(document.body).backgroundColor || (isDark ? '#1e1e1e' : '#ffffff')
+    if (!clone.style.background) clone.style.background = bg
+
+    const serializer = new XMLSerializer()
+    const svgSource = serializer.serializeToString(clone)
+    const htmlSource = `<!doctype html><html><head><meta charset="utf-8" />
+      <style>
+        html, body { width: 100%; height: 100%; margin: 0; display: flex; align-items: center; justify-content: center; background: ${bg}; }
+        svg { max-width: 100%; max-height: 100%; height: auto; width: auto; }
+      </style>
+      </head><body>${svgSource}</body></html>`
+    const blob = new Blob([htmlSource], { type: 'text/html;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank', 'noopener')
+    setTimeout(() => URL.revokeObjectURL(url), 30000)
+  }
+
+  const attachMermaidViewerButton = wrap => {
+    let btn = wrap.querySelector('.mermaid-open-btn')
+    if (!btn) {
+      btn = document.createElement('button')
+      btn.type = 'button'
+      btn.className = 'mermaid-open-btn'
+      wrap.appendChild(btn)
+    }
+
+    btn.innerHTML = '<i class="fa fa-search fa-fw" aria-hidden="true"></i>'
+
+    if (!btn.__mermaidViewerBound) {
+      btn.addEventListener('click', e => {
+        e.preventDefault()
+        e.stopPropagation()
+        const svg = wrap.__mermaidOriginalSvg || wrap.querySelector('svg')
+        if (!svg) return
+        const initViewBox = wrap.__mermaidInitViewBox
+        if (typeof svg === 'string') {
+          openSvgInNewTab({ source: svg, initViewBox })
+          return
+        }
+        openSvgInNewTab({ source: svg, initViewBox })
+      })
+      btn.__mermaidViewerBound = true
+    }
+  }
+
+  // Zoom around a point (px, py) in the SVG viewport (in viewBox coordinates)
+  const zoomAtPoint = (vb, factor, px, py) => {
+    const w = vb[2] * factor
+    const h = vb[3] * factor
+    const nx = px - (px - vb[0]) * factor
+    const ny = py - (py - vb[1]) * factor
+    return [nx, ny, w, h]
+  }
+
+  const initMermaidGestures = wrap => {
+    const svg = wrap.querySelector('svg')
+    if (!svg) return
+
+    // Ensure viewBox exists so gestures always work
+    const initVb = getSvgViewBox(svg)
+    wrap.__mermaidInitViewBox = initVb
+    wrap.__mermaidCurViewBox = initVb.slice()
+    setSvgViewBox(svg, initVb)
+
+    // Avoid binding multiple times on themeChange/pjax
+    if (wrap.__mermaidGestureBound) return
+    wrap.__mermaidGestureBound = true
+
+    // Helper: map client (viewport) coordinate -> viewBox coordinate
+    const clientToViewBox = (clientX, clientY) => {
+      const rect = svg.getBoundingClientRect()
+      const vb = wrap.__mermaidCurViewBox || getSvgViewBox(svg)
+      const x = vb[0] + (clientX - rect.left) * (vb[2] / rect.width)
+      const y = vb[1] + (clientY - rect.top) * (vb[3] / rect.height)
+      return { x, y, rect, vb }
+    }
+
+    const state = {
+      pointers: new Map(),
+      startVb: null,
+      startDist: 0,
+      startCenter: null
+    }
+
+    const clampVb = vb => {
+      const init = wrap.__mermaidInitViewBox || vb
+      const minW = init[2] * 0.1
+      const maxW = init[2] * 10
+      const minH = init[3] * 0.1
+      const maxH = init[3] * 10
+      vb[2] = clamp(vb[2], minW, maxW)
+      vb[3] = clamp(vb[3], minH, maxH)
+      return vb
+    }
+
+    const setCurVb = vb => {
+      vb = clampVb(vb)
+      wrap.__mermaidCurViewBox = vb
+      setSvgViewBox(svg, vb)
+    }
+
+    const onPointerDown = e => {
+      // Allow only primary button for mouse
+      if (e.pointerType === 'mouse' && e.button !== 0) return
+      svg.setPointerCapture(e.pointerId)
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      if (state.pointers.size === 1) {
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      } else if (state.pointers.size === 2) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        state.startDist = Math.hypot(dx, dy)
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        state.startCenter = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 }
+      }
+    }
+
+    const onPointerMove = e => {
+      if (!state.pointers.has(e.pointerId)) return
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      // Pan with 1 pointer
+      if (state.pointers.size === 1 && state.startVb) {
+        const p = [...state.pointers.values()][0]
+        const prev = { x: e.clientX - e.movementX, y: e.clientY - e.movementY }
+        // movementX/Y unreliable on touch, compute from stored last position
+        const last = wrap.__mermaidLastSinglePointer || p
+        const dxClient = p.x - last.x
+        const dyClient = p.y - last.y
+        wrap.__mermaidLastSinglePointer = p
+
+        const { rect } = clientToViewBox(p.x, p.y)
+        const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        const dx = dxClient * (vb[2] / rect.width)
+        const dy = dyClient * (vb[3] / rect.height)
+        setCurVb([vb[0] - dx, vb[1] - dy, vb[2], vb[3]])
+        return
+      }
+
+      // Pinch zoom with 2 pointers
+      if (state.pointers.size === 2 && state.startVb && state.startDist > 0) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        const dist = Math.hypot(dx, dy)
+        if (!dist) return
+        const factor = state.startDist / dist // dist bigger => zoom in (viewBox smaller)
+
+        const cx = (pts[0].x + pts[1].x) / 2
+        const cy = (pts[0].y + pts[1].y) / 2
+        const centerClient = { x: cx, y: cy }
+
+        const pxy = clientToViewBox(centerClient.x, centerClient.y)
+        const cpx = pxy.x
+        const cpy = pxy.y
+
+        const vb = zoomAtPoint(state.startVb, factor, cpx, cpy)
+        setCurVb(vb)
+      }
+    }
+
+    const onPointerUpOrCancel = e => {
+      state.pointers.delete(e.pointerId)
+      if (state.pointers.size === 0) {
+        state.startVb = null
+        state.startDist = 0
+        state.startCenter = null
+        wrap.__mermaidLastSinglePointer = null
+      } else if (state.pointers.size === 1) {
+        // reset single pointer baseline to avoid jump
+        wrap.__mermaidLastSinglePointer = [...state.pointers.values()][0]
+      }
+    }
+
+    // Wheel zoom (mouse/trackpad)
+    const onWheel = e => {
+      // ctrlKey on mac trackpad pinch; we treat both as zoom
+      e.preventDefault()
+      const delta = e.deltaY
+      const zoomFactor = delta > 0 ? 1.1 : 0.9
+      const { x, y } = clientToViewBox(e.clientX, e.clientY)
+      const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      setCurVb(zoomAtPoint(vb, zoomFactor, x, y))
+    }
+
+    const onDblClick = () => {
+      const init = wrap.__mermaidInitViewBox
+      if (!init) return
+      wrap.__mermaidCurViewBox = init.slice()
+      setSvgViewBox(svg, init)
+    }
+
+    svg.addEventListener('pointerdown', onPointerDown)
+    svg.addEventListener('pointermove', onPointerMove)
+    svg.addEventListener('pointerup', onPointerUpOrCancel)
+    svg.addEventListener('pointercancel', onPointerUpOrCancel)
+    svg.addEventListener('wheel', onWheel, { passive: false })
+    svg.addEventListener('dblclick', onDblClick)
+  }
+
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+
+      // Clear old render (themeChange/pjax will rerun)
+      const oldSvg = item.querySelector('svg')
+      if (oldSvg) oldSvg.remove()
+      item.__mermaidGestureBound = false
+
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = `%%{init: ${JSON.stringify(config)}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+        if (true) initMermaidGestures(item)
+        item.__mermaidOriginalSvg = svg
+        if (true) attachMermaidViewerButton(item)
+      }
+
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (true) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.5"></script></div></div></body></html>
