@@ -1,0 +1,708 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>二阶滑模算法理论推导：Twisting / STA / 线性超螺旋（SOSML） | BeichenZhuo的Blog</title><meta name="author" content="BeichenZhuo"><meta name="copyright" content="BeichenZhuo"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="推导三种主流二阶滑模算法：普通二阶滑模（Twisting）、超螺旋滑模（STA&#x2F;SOSM）、带线性项超螺旋滑模（SOSML）">
+<meta property="og:type" content="article">
+<meta property="og:title" content="二阶滑模算法理论推导：Twisting &#x2F; STA &#x2F; 线性超螺旋（SOSML）">
+<meta property="og:url" content="https://beichenzhuo.github.io/2025/11/25/%E6%BB%91%E8%86%9C%E8%A7%82%E6%B5%8B%E5%99%A8/index.html">
+<meta property="og:site_name" content="BeichenZhuo的Blog">
+<meta property="og:description" content="推导三种主流二阶滑模算法：普通二阶滑模（Twisting）、超螺旋滑模（STA&#x2F;SOSM）、带线性项超螺旋滑模（SOSML）">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://beichenzhuo.github.io/img/dog-icon.png">
+<meta property="article:published_time" content="2025-11-25T15:29:36.000Z">
+<meta property="article:modified_time" content="2026-07-19T12:19:30.412Z">
+<meta property="article:author" content="BeichenZhuo">
+<meta property="article:tag" content="滑膜观测器">
+<meta property="article:tag" content="观测器">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://beichenzhuo.github.io/img/dog-icon.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "二阶滑模算法理论推导：Twisting / STA / 线性超螺旋（SOSML）",
+  "url": "https://beichenzhuo.github.io/2025/11/25/%E6%BB%91%E8%86%9C%E8%A7%82%E6%B5%8B%E5%99%A8/",
+  "image": "https://beichenzhuo.github.io/img/dog-icon.png",
+  "datePublished": "2025-11-25T15:29:36.000Z",
+  "dateModified": "2026-07-19T12:19:30.412Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "BeichenZhuo",
+      "url": "https://BeichenZhuo.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://beichenzhuo.github.io/2025/11/25/%E6%BB%91%E8%86%9C%E8%A7%82%E6%B5%8B%E5%99%A8/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.5"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":-1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '二阶滑模算法理论推导：Twisting / STA / 线性超螺旋（SOSML）',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/custom.css"><meta name="generator" content="Hexo 8.1.2"></head><body><div class="bg-animation" id="web_bg" style="background: [object Object];"></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">BeichenZhuo的Blog</span></a><a class="nav-page-title" href="/"><span class="site-name">二阶滑模算法理论推导：Twisting / STA / 线性超螺旋（SOSML）</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div></div></nav><div id="post-info"><h1 class="post-title">二阶滑模算法理论推导：Twisting / STA / 线性超螺旋（SOSML）</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-11-25T15:29:36.000Z" title="发表于 2025-11-25 23:29:36">2025-11-25</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-07-19T12:19:30.412Z" title="更新于 2026-07-19 20:19:30">2026-07-19</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h2 id="前置统一模型与基础假设"><a href="#前置统一模型与基础假设" class="headerlink" title="前置统一模型与基础假设"></a>前置统一模型与基础假设</h2><h3 id="二阶被控对象"><a href="#二阶被控对象" class="headerlink" title="二阶被控对象"></a>二阶被控对象</h3><p>考虑含集总有界扰动、相对阶为2的标准二阶标量系统（高维可对角化堆叠）：</p>
+<script type="math/tex; mode=display">
+\begin{cases}
+\dot{x}_1 = x_2 \\
+\dot{x}_2 = f(t) + u
+\end{cases} \tag{1}</script><p><strong>变量定义</strong>：</p>
+<ul>
+<li>$x_1$：滑模变量（控制目标：有限时间收敛至0）；</li>
+<li>$x_2$：$x_1$ 的一阶导数（速度状态）；</li>
+<li>$u$：控制输入；</li>
+<li>$f(t)$：包含建模误差、外部干扰的集总扰动。</li>
+</ul>
+<hr>
+<h2 id="普通二阶滑模：Twisting-算法"><a href="#普通二阶滑模：Twisting-算法" class="headerlink" title="普通二阶滑模：Twisting 算法"></a>普通二阶滑模：Twisting 算法</h2><h3 id="控制律设计"><a href="#控制律设计" class="headerlink" title="控制律设计"></a>控制律设计</h3><p>Twisting 通过双状态符号函数叠加构造控制量，直接抑制有界幅值扰动：</p>
+<script type="math/tex; mode=display">
+u = -k_1 \cdot \text{sgn}(x_1) - k_2 \cdot \text{sgn}(x_2), \quad k_1 > 0, k_2 > 0 \tag{2}</script><h3 id="闭环误差动态"><a href="#闭环误差动态" class="headerlink" title="闭环误差动态"></a>闭环误差动态</h3><p>将 (2) 代入 (1)，得：</p>
+<script type="math/tex; mode=display">
+\begin{cases}
+\dot{x}_1 = x_2 \\
+\dot{x}_2 = f(t) - k_1 \text{sgn}(x_1) - k_2 \text{sgn}(x_2)
+\end{cases} \tag{3}</script><h3 id="非光滑李雅普诺夫函数构造"><a href="#非光滑李雅普诺夫函数构造" class="headerlink" title="非光滑李雅普诺夫函数构造"></a>非光滑李雅普诺夫函数构造</h3><p>选取正定径向无界的候选函数（含交叉项）：</p>
+<script type="math/tex; mode=display">
+V = \frac{1}{2} k_1 x_1^2 + \frac{1}{2} x_2^2 + k_2 |x_1| \cdot |x_2| \tag{4}</script><p><strong>正定性严格判定</strong>：该二元二次型正定的充要条件为顺序主子式大于0，即：</p>
+<script type="math/tex; mode=display">
+k_1 > 0, \quad \boldsymbol{k_1 > k_2^2}</script><h3 id="导数放缩与有限时间收敛"><a href="#导数放缩与有限时间收敛" class="headerlink" title="导数放缩与有限时间收敛"></a>导数放缩与有限时间收敛</h3><p>对 (4) 沿系统轨迹求导，通过四象限符号全域分析（相平面对称性），当满足增益条件 $k_1 &gt; k_2 + D$ 且 $k_2 &gt; D$ 时，存在常数 $\eta &gt; 0$，使得：</p>
+<script type="math/tex; mode=display">
+\dot{V} \le -\eta \sqrt{V} \tag{5}</script><p>对微分不等式 (5) 分离变量积分：</p>
+<script type="math/tex; mode=display">
+\frac{dV}{\sqrt{V}} \le -\eta dt \quad \Longrightarrow \quad 2\sqrt{V(t)} \le 2\sqrt{V(0)} - \eta t</script><p>收敛时间上界有限：</p>
+<script type="math/tex; mode=display">
+T \le \frac{2\sqrt{V(0)}}{\eta} < \infty \tag{6}</script><h3 id="算法结论"><a href="#算法结论" class="headerlink" title="算法结论"></a>算法结论</h3><p>Twisting 可保证 $(x_1, x_2)$ 在有限时间内收敛至原点，<strong>但必须同时测量误差及其微分</strong>，工程中易引入噪声抖振。</p>
+<hr>
+<h2 id="超螺旋滑模：STA-SOSM-算法"><a href="#超螺旋滑模：STA-SOSM-算法" class="headerlink" title="超螺旋滑模：STA / SOSM 算法"></a>超螺旋滑模：STA / SOSM 算法</h2><p>超螺旋算法是工程中最常用的二阶滑模，<strong>仅需测量 $x_1$</strong>，通过内部积分动态隐式重构微分项，完美适配扰动变化率有界的场景。</p>
+<h3 id="动态控制律设计"><a href="#动态控制律设计" class="headerlink" title="动态控制律设计"></a>动态控制律设计</h3><p>引入动态控制，令 $u = \dot{v}$，规避显式微分项：</p>
+<script type="math/tex; mode=display">
+v = -k_1 |x_1|^{1/2} \text{sgn}(x_1) + z, \quad \dot{z} = -k_2 \text{sgn}(x_1) \tag{7}</script><p>定义复合误差变量 $s = z + f(t)$，结合扰动特性 $|\dot{f}(t)| \le L$，推导标准 STA 误差动态：</p>
+<script type="math/tex; mode=display">
+\begin{cases}
+\dot{x}_1 = -k_1 |x_1|^{1/2} \text{sgn}(x_1) + s \\
+\dot{s} = -k_2 \text{sgn}(x_1) + \rho(t)
+\end{cases}, \quad |\rho(t)| \le L \tag{8}</script><h3 id="Moreno-坐标变换（核心技巧）"><a href="#Moreno-坐标变换（核心技巧）" class="headerlink" title="Moreno 坐标变换（核心技巧）"></a>Moreno 坐标变换（核心技巧）</h3><p>为证明有限时间收敛，引入经典 Moreno 变换，将非线性系统”近似线性化”：</p>
+<script type="math/tex; mode=display">
+\zeta = 
+\begin{bmatrix}
+\zeta_1 \\
+\zeta_2
+\end{bmatrix}
+= 
+\begin{bmatrix}
+|x_1|^{1/2} \text{sgn}(x_1) \\
+s
+\end{bmatrix} \tag{9}</script><p><strong>核心性质</strong>：$\zeta_1^2 = |x_1|$，且 $|x_1|^{1/2} = |\zeta_1|$。</p>
+<h3 id="变换后系统动态"><a href="#变换后系统动态" class="headerlink" title="变换后系统动态"></a>变换后系统动态</h3><p>对 (9) 求导并整理，得：</p>
+<script type="math/tex; mode=display">
+\dot{\zeta} = \frac{1}{|\zeta_1|}
+\underbrace{\begin{bmatrix}
+-\frac{k_1}{2} & \frac{1}{2} \\
+-k_2 & 0
+\end{bmatrix}}_{A}
+\zeta + 
+\underbrace{\begin{bmatrix}
+0 \\
+1
+\end{bmatrix}}_{B}
+\rho(t) \tag{10}</script><p>当 $k_1, k_2 &gt; 0$ 时，矩阵 $A$ <strong>Hurwitz 稳定</strong>（特征值实部全负）。</p>
+<h3 id="严格李雅普诺夫稳定性放缩（修正闭环）"><a href="#严格李雅普诺夫稳定性放缩（修正闭环）" class="headerlink" title="严格李雅普诺夫稳定性放缩（修正闭环）"></a>严格李雅普诺夫稳定性放缩（修正闭环）</h3><p>取正定矩阵 $P = P^\top &gt; 0$ 满足 Lyapunov 方程 $A^\top P + PA = -Q$（其中 $Q = Q^\top &gt; 0$，常取单位阵）。构造候选函数 $V = \zeta^\top P \zeta$。</p>
+<p>沿 (10) 对 $V$ 求导：</p>
+<script type="math/tex; mode=display">
+\dot{V} = -\frac{1}{|\zeta_1|} \zeta^\top Q \zeta + 2 \zeta^\top P B \rho(t) \tag{11}</script><p>利用范数不等式和扰动有界 $|\rho| \le L$，得：</p>
+<script type="math/tex; mode=display">
+\dot{V} \le -\frac{\lambda_{\min}(Q)}{|\zeta_1|} \|\zeta\|^2 + 2 \|P B\| \|\zeta\| L</script><p><strong>关键严格放缩</strong>：由于 $|\zeta_1| \le |\zeta|$，则 $\frac{1}{|\zeta_1|} \ge \frac{1}{|\zeta|}$，故：</p>
+<script type="math/tex; mode=display">
+\dot{V} \le -\lambda_{\min}(Q) \|\zeta\| + 2 \|P B\| L \|\zeta\| = -\left( \lambda_{\min}(Q) - 2 \|P B\| L \right) \|\zeta\| \tag{12}</script><p><strong>增益选取条件</strong>：通过选取足够大的 $k<em>1, k_2$，可使 $\lambda</em>{\min}(Q) \gg 2 |P B| L$，保证：</p>
+<script type="math/tex; mode=display">
+\alpha = \lambda_{\min}(Q) - 2 \|P B\| L > 0 \quad \Rightarrow \quad \dot{V} \le -\alpha \|\zeta\| \tag{13}</script><p>由于 $V$ 是二次型，且 $P$ 正定，存在 $\beta &gt; 0$ 使 $|\zeta| \ge \beta \sqrt{V}$，代入 (13) 得：</p>
+<script type="math/tex; mode=display">
+\dot{V} \le -\alpha \beta \sqrt{V} \tag{14}</script><h3 id="收敛结论"><a href="#收敛结论" class="headerlink" title="收敛结论"></a>收敛结论</h3><p>求解 (14)，得 $T \le \frac{2\sqrt{V(0)}}{\alpha \beta} &lt; \infty$。</p>
+<p><strong>STA 实现仅需测量 $x_1$ 单状态下的有限时间收敛，完美规避微分噪声痛点。</strong></p>
+<hr>
+<h2 id="带线性项超螺旋滑模：SOSML-算法"><a href="#带线性项超螺旋滑模：SOSML-算法" class="headerlink" title="带线性项超螺旋滑模：SOSML 算法"></a>带线性项超螺旋滑模：SOSML 算法</h2><p>SOSML 在 STA 基础上引入线性项，兼顾远距离指数快速收敛与原点附近有限时间高精度收敛。</p>
+<h3 id="控制律与误差动态"><a href="#控制律与误差动态" class="headerlink" title="控制律与误差动态"></a>控制律与误差动态</h3><p>优化控制律：</p>
+<script type="math/tex; mode=display">
+v = -k_1 |x_1|^{1/2} \text{sgn}(x_1) - k_2 x_1 + z, \quad \dot{z} = -k_3 \text{sgn}(x_1) - k_4 x_1 \tag{15}</script><p>推导误差动态标准型：</p>
+<script type="math/tex; mode=display">
+\begin{cases}
+\dot{x}_1 = -k_1 |x_1|^{1/2} \text{sgn}(x_1) - k_2 x_1 + s \\
+\dot{s} = -k_3 \text{sgn}(x_1) - k_4 x_1 + \rho(t)
+\end{cases}, \quad |\rho(t)| \le L \tag{16}</script><h3 id="矩阵分解与分段稳定性"><a href="#矩阵分解与分段稳定性" class="headerlink" title="矩阵分解与分段稳定性"></a>矩阵分解与分段稳定性</h3><p>沿用变换 $\zeta_1 = |x_1|^{1/2} \text{sgn}(x_1)$，将系统矩阵拆分为恒定稳定项 $A_0$ 和线性时变项 $A_1$：</p>
+<script type="math/tex; mode=display">
+\dot{\zeta} = \frac{1}{|\zeta_1|}
+\begin{bmatrix}
+-\frac{k_1}{2} - \frac{k_2}{2} |\zeta_1| & \frac{1}{2} \\
+-k_3 - k_4 |\zeta_1| & 0
+\end{bmatrix}
+\zeta + B\rho(t) \tag{17}</script><p><strong>分段收敛逻辑</strong>：</p>
+<ul>
+<li><strong>远离原点（$|\zeta_1|$ 大）</strong>：线性项 $A_1$ 占主导，系统呈指数快速趋近；</li>
+<li><strong>靠近原点（$|\zeta_1|$ 小）</strong>：线性项衰减，系统退化为标准 STA，恢复有限时间精准收敛。</li>
+</ul>
+<p>最终全局满足统一微分不等式：</p>
+<script type="math/tex; mode=display">
+\dot{V} \le -\alpha_1 \|\zeta\| - \alpha_2 \|\zeta\|^2 \le -\alpha_1 \|\zeta\| \tag{18}</script><h3 id="收敛结论-1"><a href="#收敛结论-1" class="headerlink" title="收敛结论"></a>收敛结论</h3><p>SOSML 实现<strong>全局有限时间收敛 + 全域快速动态响应</strong>，无传统滑模的收敛速度短板，综合性能最优。</p>
+<hr>
+<h2 id="三种二阶滑模算法全方位对比"><a href="#三种二阶滑模算法全方位对比" class="headerlink" title="三种二阶滑模算法全方位对比"></a>三种二阶滑模算法全方位对比</h2><div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">算法类型</th>
+<th style="text-align:left">测量需求</th>
+<th style="text-align:left">扰动假设</th>
+<th style="text-align:left">收敛特性</th>
+<th style="text-align:left">核心特点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>Twisting</strong>（普通二阶）</td>
+<td style="text-align:left">需测 $x_1, x_2$（双状态）</td>
+<td style="text-align:left">幅值有界 $\</td>
+<td style="text-align:left">f(t)\</td>
+<td style="text-align:left">\le D$</td>
+<td>有限时间收敛</td>
+<td>结构简单，依赖微分信号，易引入抖振</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>STA</strong>（超螺旋）</td>
+<td style="text-align:left">仅需测 $x_1$（单状态）</td>
+<td style="text-align:left">变化率有界 $\</td>
+<td style="text-align:left">\dot{f}(t)\</td>
+<td style="text-align:left">\le L$</td>
+<td>有限时间收敛</td>
+<td>无需微分，抗扰性强，工业通用首选</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>SOSML</strong>（线性超螺旋）</td>
+<td style="text-align:left">仅需测 $x_1$（单状态）</td>
+<td style="text-align:left">变化率有界 $\</td>
+<td style="text-align:left">\dot{f}(t)\</td>
+<td style="text-align:left">\le L$</td>
+<td>全局有限时间 + 远距离指数加速</td>
+<td>动态响应最快，兼顾精度与速度，综合最优</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div style="width:260px;border:1px solid #eee;border-radius:10px;padding:30px 20px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+  <a href="files/Garofalo 等 - 2019 - Sliding Mode Momentum Observers for Estimation of External Torques and Joint Acceleration.pdf" target="_blank" style="text-decoration:none;color:#2196f3;">
+    <i class="fas fa-file-pdf" style="font-size:60px;"></i>
+    <p style="margin:12px 0 0 0;font-size:15px;">Sliding Mode Momentum Observers for Estimation of External Torques and Joint Acceleration</p>
+  </a>
+</div></article><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E8%A7%82%E6%B5%8B%E5%99%A8/">观测器</a><a class="post-meta__tags" href="/tags/%E6%BB%91%E8%86%9C%E8%A7%82%E6%B5%8B%E5%99%A8/">滑膜观测器</a></div><div class="post-share"><div class="social-share" data-image="/img/dog-icon.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2025/11/28/ZBC-PPI%E5%8F%82%E6%95%B0%E4%B8%8E%E5%85%B1%E6%8C%AF/" title="PPI参数与共振"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">PPI参数与共振</div></div><div class="info-2"><div class="info-item-1">PPI参数(Kp、Kv、Ki)对低频共振的影响分析</div></div></div></a><a class="pagination-related" href="/2025/11/25/ZBC-PID%E8%87%AA%E8%B0%83%E8%B0%90/" title="通用伺服控制介绍"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">通用伺服控制介绍</div></div><div class="info-2"><div class="info-item-1">PID自调谐方法及汇川ETUNE/STUNE分析</div></div></div></a></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/dog-icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">BeichenZhuo</div><div class="author-info-description">伺服&机器人技术笔记</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">63</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">139</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/BeichenZhuo"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">email：1435148110@qq.com</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E7%BD%AE%E7%BB%9F%E4%B8%80%E6%A8%A1%E5%9E%8B%E4%B8%8E%E5%9F%BA%E7%A1%80%E5%81%87%E8%AE%BE"><span class="toc-number">1.</span> <span class="toc-text">前置统一模型与基础假设</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BA%8C%E9%98%B6%E8%A2%AB%E6%8E%A7%E5%AF%B9%E8%B1%A1"><span class="toc-number">1.1.</span> <span class="toc-text">二阶被控对象</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%99%AE%E9%80%9A%E4%BA%8C%E9%98%B6%E6%BB%91%E6%A8%A1%EF%BC%9ATwisting-%E7%AE%97%E6%B3%95"><span class="toc-number">2.</span> <span class="toc-text">普通二阶滑模：Twisting 算法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8E%A7%E5%88%B6%E5%BE%8B%E8%AE%BE%E8%AE%A1"><span class="toc-number">2.1.</span> <span class="toc-text">控制律设计</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%97%AD%E7%8E%AF%E8%AF%AF%E5%B7%AE%E5%8A%A8%E6%80%81"><span class="toc-number">2.2.</span> <span class="toc-text">闭环误差动态</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%9D%9E%E5%85%89%E6%BB%91%E6%9D%8E%E9%9B%85%E6%99%AE%E8%AF%BA%E5%A4%AB%E5%87%BD%E6%95%B0%E6%9E%84%E9%80%A0"><span class="toc-number">2.3.</span> <span class="toc-text">非光滑李雅普诺夫函数构造</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AF%BC%E6%95%B0%E6%94%BE%E7%BC%A9%E4%B8%8E%E6%9C%89%E9%99%90%E6%97%B6%E9%97%B4%E6%94%B6%E6%95%9B"><span class="toc-number">2.4.</span> <span class="toc-text">导数放缩与有限时间收敛</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%AE%97%E6%B3%95%E7%BB%93%E8%AE%BA"><span class="toc-number">2.5.</span> <span class="toc-text">算法结论</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%B6%85%E8%9E%BA%E6%97%8B%E6%BB%91%E6%A8%A1%EF%BC%9ASTA-SOSM-%E7%AE%97%E6%B3%95"><span class="toc-number">3.</span> <span class="toc-text">超螺旋滑模：STA &#x2F; SOSM 算法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8A%A8%E6%80%81%E6%8E%A7%E5%88%B6%E5%BE%8B%E8%AE%BE%E8%AE%A1"><span class="toc-number">3.1.</span> <span class="toc-text">动态控制律设计</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Moreno-%E5%9D%90%E6%A0%87%E5%8F%98%E6%8D%A2%EF%BC%88%E6%A0%B8%E5%BF%83%E6%8A%80%E5%B7%A7%EF%BC%89"><span class="toc-number">3.2.</span> <span class="toc-text">Moreno 坐标变换（核心技巧）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%98%E6%8D%A2%E5%90%8E%E7%B3%BB%E7%BB%9F%E5%8A%A8%E6%80%81"><span class="toc-number">3.3.</span> <span class="toc-text">变换后系统动态</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%A5%E6%A0%BC%E6%9D%8E%E9%9B%85%E6%99%AE%E8%AF%BA%E5%A4%AB%E7%A8%B3%E5%AE%9A%E6%80%A7%E6%94%BE%E7%BC%A9%EF%BC%88%E4%BF%AE%E6%AD%A3%E9%97%AD%E7%8E%AF%EF%BC%89"><span class="toc-number">3.4.</span> <span class="toc-text">严格李雅普诺夫稳定性放缩（修正闭环）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%94%B6%E6%95%9B%E7%BB%93%E8%AE%BA"><span class="toc-number">3.5.</span> <span class="toc-text">收敛结论</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B8%A6%E7%BA%BF%E6%80%A7%E9%A1%B9%E8%B6%85%E8%9E%BA%E6%97%8B%E6%BB%91%E6%A8%A1%EF%BC%9ASOSML-%E7%AE%97%E6%B3%95"><span class="toc-number">4.</span> <span class="toc-text">带线性项超螺旋滑模：SOSML 算法</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%8E%A7%E5%88%B6%E5%BE%8B%E4%B8%8E%E8%AF%AF%E5%B7%AE%E5%8A%A8%E6%80%81"><span class="toc-number">4.1.</span> <span class="toc-text">控制律与误差动态</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%9F%A9%E9%98%B5%E5%88%86%E8%A7%A3%E4%B8%8E%E5%88%86%E6%AE%B5%E7%A8%B3%E5%AE%9A%E6%80%A7"><span class="toc-number">4.2.</span> <span class="toc-text">矩阵分解与分段稳定性</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%94%B6%E6%95%9B%E7%BB%93%E8%AE%BA-1"><span class="toc-number">4.3.</span> <span class="toc-text">收敛结论</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E7%A7%8D%E4%BA%8C%E9%98%B6%E6%BB%91%E6%A8%A1%E7%AE%97%E6%B3%95%E5%85%A8%E6%96%B9%E4%BD%8D%E5%AF%B9%E6%AF%94"><span class="toc-number">5.</span> <span class="toc-text">三种二阶滑模算法全方位对比</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/02/11/Odive%E7%A3%81%E9%93%BE%E8%A7%82%E6%B5%8B%E5%99%A8/" title="Odrive非线性磁链观测器">Odrive非线性磁链观测器</a><time datetime="2026-07-19T18:00:22.103Z" title="更新于 2026-07-20 02:00:22">2026-07-20</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/07/03/ZBC-%E4%BC%BA%E6%9C%8D%E7%B3%BB%E7%BB%9F%E8%BE%A8%E8%AF%86%E5%9B%9B%E5%A4%A7%E6%BF%80%E5%8A%B1%E6%B7%B1%E5%BA%A6%E5%AF%B9%E6%AF%94/" title="系统频域扫频：激励选择与数据处理">系统频域扫频：激励选择与数据处理</a><time datetime="2026-07-19T13:53:31.688Z" title="更新于 2026-07-19 21:53:31">2026-07-19</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/11/25/%E6%BB%91%E8%86%9C%E8%A7%82%E6%B5%8B%E5%99%A8/" title="二阶滑模算法理论推导：Twisting / STA / 线性超螺旋（SOSML）">二阶滑模算法理论推导：Twisting / STA / 线性超螺旋（SOSML）</a><time datetime="2026-07-19T12:19:30.412Z" title="更新于 2026-07-19 20:19:30">2026-07-19</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/07/12/ZBC-%E6%89%B0%E5%8A%A8%E8%A7%82%E6%B5%8B%E5%99%A8/" title="扰动观测器">扰动观测器</a><time datetime="2026-07-19T04:04:17.323Z" title="更新于 2026-07-19 12:04:17">2026-07-19</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/17/PID%E6%95%B4%E5%AE%9A%E6%A0%87%E5%87%86%E2%80%94%E2%80%94%E8%B5%8B%E5%80%BC%E6%9C%80%E4%BC%98%E3%80%81%E5%AF%B9%E7%A7%B0%E6%9C%80%E4%BC%98%E3%80%81%E9%98%BB%E5%B0%BC%E6%9C%80%E4%BC%98/" title="PID整定标准——幅值最优、对称最优、阻尼最优">PID整定标准——幅值最优、对称最优、阻尼最优</a><time datetime="2026-07-17T14:51:40.510Z" title="更新于 2026-07-17 22:51:40">2026-07-17</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2023 - 2026 By BeichenZhuo</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.5</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.5"></script><script src="/js/main.js?v=5.5.5"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.1.2/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const parseViewBox = viewBox => {
+    if (!viewBox) return null
+    const parts = viewBox.trim().split(/[\s,]+/).map(n => Number(n))
+    if (parts.length !== 4 || parts.some(n => Number.isNaN(n))) return null
+    return parts
+  }
+
+  const getSvgViewBox = svg => {
+    const attr = parseViewBox(svg.getAttribute('viewBox'))
+    if (attr) return attr
+
+    // Fallback: use bbox to build a viewBox
+    try {
+      const bbox = svg.getBBox()
+      if (bbox && bbox.width && bbox.height) return [bbox.x, bbox.y, bbox.width, bbox.height]
+    } catch (e) {
+      // getBBox may fail on some edge cases; ignore
+    }
+
+    const w = Number(svg.getAttribute('width')) || 0
+    const h = Number(svg.getAttribute('height')) || 0
+    if (w > 0 && h > 0) return [0, 0, w, h]
+    return [0, 0, 100, 100]
+  }
+
+  const setSvgViewBox = (svg, vb) => {
+    svg.setAttribute('viewBox', `${vb[0]} ${vb[1]} ${vb[2]} ${vb[3]}`)
+  }
+
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
+
+  const openSvgInNewTab = ({ source, initViewBox }) => {
+    const getClonedSvg = () => {
+      if (typeof source === 'string') {
+        const template = document.createElement('template')
+        template.innerHTML = source.trim()
+        const svg = template.content.querySelector('svg')
+        return svg ? svg.cloneNode(true) : null
+      }
+      if (source && typeof source.cloneNode === 'function') {
+        return source.cloneNode(true)
+      }
+      return null
+    }
+
+    const clone = getClonedSvg()
+    if (!clone) return
+    if (initViewBox && initViewBox.length === 4) {
+      clone.setAttribute('viewBox', initViewBox.join(' '))
+    }
+    if (!clone.getAttribute('xmlns')) clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+    if (!clone.getAttribute('xmlns:xlink') && clone.outerHTML.includes('xlink:')) {
+      clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
+    }
+    // inject background to match current theme
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
+    const bg = getComputedStyle(document.body).backgroundColor || (isDark ? '#1e1e1e' : '#ffffff')
+    if (!clone.style.background) clone.style.background = bg
+
+    const serializer = new XMLSerializer()
+    const svgSource = serializer.serializeToString(clone)
+    const htmlSource = `<!doctype html><html><head><meta charset="utf-8" />
+      <style>
+        html, body { width: 100%; height: 100%; margin: 0; display: flex; align-items: center; justify-content: center; background: ${bg}; }
+        svg { max-width: 100%; max-height: 100%; height: auto; width: auto; }
+      </style>
+      </head><body>${svgSource}</body></html>`
+    const blob = new Blob([htmlSource], { type: 'text/html;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank', 'noopener')
+    setTimeout(() => URL.revokeObjectURL(url), 30000)
+  }
+
+  const attachMermaidViewerButton = wrap => {
+    let btn = wrap.querySelector('.mermaid-open-btn')
+    if (!btn) {
+      btn = document.createElement('button')
+      btn.type = 'button'
+      btn.className = 'mermaid-open-btn'
+      wrap.appendChild(btn)
+    }
+
+    btn.innerHTML = '<i class="fa fa-search fa-fw" aria-hidden="true"></i>'
+
+    if (!btn.__mermaidViewerBound) {
+      btn.addEventListener('click', e => {
+        e.preventDefault()
+        e.stopPropagation()
+        const svg = wrap.__mermaidOriginalSvg || wrap.querySelector('svg')
+        if (!svg) return
+        const initViewBox = wrap.__mermaidInitViewBox
+        if (typeof svg === 'string') {
+          openSvgInNewTab({ source: svg, initViewBox })
+          return
+        }
+        openSvgInNewTab({ source: svg, initViewBox })
+      })
+      btn.__mermaidViewerBound = true
+    }
+  }
+
+  // Zoom around a point (px, py) in the SVG viewport (in viewBox coordinates)
+  const zoomAtPoint = (vb, factor, px, py) => {
+    const w = vb[2] * factor
+    const h = vb[3] * factor
+    const nx = px - (px - vb[0]) * factor
+    const ny = py - (py - vb[1]) * factor
+    return [nx, ny, w, h]
+  }
+
+  const initMermaidGestures = wrap => {
+    const svg = wrap.querySelector('svg')
+    if (!svg) return
+
+    // Ensure viewBox exists so gestures always work
+    const initVb = getSvgViewBox(svg)
+    wrap.__mermaidInitViewBox = initVb
+    wrap.__mermaidCurViewBox = initVb.slice()
+    setSvgViewBox(svg, initVb)
+
+    // Avoid binding multiple times on themeChange/pjax
+    if (wrap.__mermaidGestureBound) return
+    wrap.__mermaidGestureBound = true
+
+    // Helper: map client (viewport) coordinate -> viewBox coordinate
+    const clientToViewBox = (clientX, clientY) => {
+      const rect = svg.getBoundingClientRect()
+      const vb = wrap.__mermaidCurViewBox || getSvgViewBox(svg)
+      const x = vb[0] + (clientX - rect.left) * (vb[2] / rect.width)
+      const y = vb[1] + (clientY - rect.top) * (vb[3] / rect.height)
+      return { x, y, rect, vb }
+    }
+
+    const state = {
+      pointers: new Map(),
+      startVb: null,
+      startDist: 0,
+      startCenter: null
+    }
+
+    const clampVb = vb => {
+      const init = wrap.__mermaidInitViewBox || vb
+      const minW = init[2] * 0.1
+      const maxW = init[2] * 10
+      const minH = init[3] * 0.1
+      const maxH = init[3] * 10
+      vb[2] = clamp(vb[2], minW, maxW)
+      vb[3] = clamp(vb[3], minH, maxH)
+      return vb
+    }
+
+    const setCurVb = vb => {
+      vb = clampVb(vb)
+      wrap.__mermaidCurViewBox = vb
+      setSvgViewBox(svg, vb)
+    }
+
+    const onPointerDown = e => {
+      // Allow only primary button for mouse
+      if (e.pointerType === 'mouse' && e.button !== 0) return
+      svg.setPointerCapture(e.pointerId)
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      if (state.pointers.size === 1) {
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      } else if (state.pointers.size === 2) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        state.startDist = Math.hypot(dx, dy)
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        state.startCenter = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 }
+      }
+    }
+
+    const onPointerMove = e => {
+      if (!state.pointers.has(e.pointerId)) return
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      // Pan with 1 pointer
+      if (state.pointers.size === 1 && state.startVb) {
+        const p = [...state.pointers.values()][0]
+        const prev = { x: e.clientX - e.movementX, y: e.clientY - e.movementY }
+        // movementX/Y unreliable on touch, compute from stored last position
+        const last = wrap.__mermaidLastSinglePointer || p
+        const dxClient = p.x - last.x
+        const dyClient = p.y - last.y
+        wrap.__mermaidLastSinglePointer = p
+
+        const { rect } = clientToViewBox(p.x, p.y)
+        const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        const dx = dxClient * (vb[2] / rect.width)
+        const dy = dyClient * (vb[3] / rect.height)
+        setCurVb([vb[0] - dx, vb[1] - dy, vb[2], vb[3]])
+        return
+      }
+
+      // Pinch zoom with 2 pointers
+      if (state.pointers.size === 2 && state.startVb && state.startDist > 0) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        const dist = Math.hypot(dx, dy)
+        if (!dist) return
+        const factor = state.startDist / dist // dist bigger => zoom in (viewBox smaller)
+
+        const cx = (pts[0].x + pts[1].x) / 2
+        const cy = (pts[0].y + pts[1].y) / 2
+        const centerClient = { x: cx, y: cy }
+
+        const pxy = clientToViewBox(centerClient.x, centerClient.y)
+        const cpx = pxy.x
+        const cpy = pxy.y
+
+        const vb = zoomAtPoint(state.startVb, factor, cpx, cpy)
+        setCurVb(vb)
+      }
+    }
+
+    const onPointerUpOrCancel = e => {
+      state.pointers.delete(e.pointerId)
+      if (state.pointers.size === 0) {
+        state.startVb = null
+        state.startDist = 0
+        state.startCenter = null
+        wrap.__mermaidLastSinglePointer = null
+      } else if (state.pointers.size === 1) {
+        // reset single pointer baseline to avoid jump
+        wrap.__mermaidLastSinglePointer = [...state.pointers.values()][0]
+      }
+    }
+
+    // Wheel zoom (mouse/trackpad)
+    const onWheel = e => {
+      // ctrlKey on mac trackpad pinch; we treat both as zoom
+      e.preventDefault()
+      const delta = e.deltaY
+      const zoomFactor = delta > 0 ? 1.1 : 0.9
+      const { x, y } = clientToViewBox(e.clientX, e.clientY)
+      const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      setCurVb(zoomAtPoint(vb, zoomFactor, x, y))
+    }
+
+    const onDblClick = () => {
+      const init = wrap.__mermaidInitViewBox
+      if (!init) return
+      wrap.__mermaidCurViewBox = init.slice()
+      setSvgViewBox(svg, init)
+    }
+
+    svg.addEventListener('pointerdown', onPointerDown)
+    svg.addEventListener('pointermove', onPointerMove)
+    svg.addEventListener('pointerup', onPointerUpOrCancel)
+    svg.addEventListener('pointercancel', onPointerUpOrCancel)
+    svg.addEventListener('wheel', onWheel, { passive: false })
+    svg.addEventListener('dblclick', onDblClick)
+  }
+
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+
+      // Clear old render (themeChange/pjax will rerun)
+      const oldSvg = item.querySelector('svg')
+      if (oldSvg) oldSvg.remove()
+      item.__mermaidGestureBound = false
+
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = `%%{init: ${JSON.stringify(config)}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+        if (true) initMermaidGestures(item)
+        item.__mermaidOriginalSvg = svg
+        if (true) attachMermaidViewerButton(item)
+      }
+
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (true) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.5"></script></div></div></body></html>

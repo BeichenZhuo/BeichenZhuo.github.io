@@ -1,13 +1,13 @@
-<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>对比四种系统激励方式：正弦定点、Chirp扫频、PRBS伪随机、锤击法 | BeichenZhuo的Blog</title><meta name="author" content="BeichenZhuo"><meta name="copyright" content="BeichenZhuo"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="从响应本质、频谱特性、数学原理、数据算法全方位拆解四种经典激励方式">
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>系统频域扫频：激励选择与数据处理 | BeichenZhuo的Blog</title><meta name="author" content="BeichenZhuo"><meta name="copyright" content="BeichenZhuo"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="从响应本质、频谱特性、数学原理、数据算法全方位拆解四种经典激励方式">
 <meta property="og:type" content="article">
-<meta property="og:title" content="对比四种系统激励方式：正弦定点、Chirp扫频、PRBS伪随机、锤击法">
+<meta property="og:title" content="系统频域扫频：激励选择与数据处理">
 <meta property="og:url" content="https://beichenzhuo.github.io/2024/07/03/ZBC-%E4%BC%BA%E6%9C%8D%E7%B3%BB%E7%BB%9F%E8%BE%A8%E8%AF%86%E5%9B%9B%E5%A4%A7%E6%BF%80%E5%8A%B1%E6%B7%B1%E5%BA%A6%E5%AF%B9%E6%AF%94/index.html">
 <meta property="og:site_name" content="BeichenZhuo的Blog">
 <meta property="og:description" content="从响应本质、频谱特性、数学原理、数据算法全方位拆解四种经典激励方式">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://beichenzhuo.github.io/img/dog-icon.png">
 <meta property="article:published_time" content="2024-07-03T15:15:42.000Z">
-<meta property="article:modified_time" content="2026-07-03T07:28:33.147Z">
+<meta property="article:modified_time" content="2026-07-19T13:53:31.688Z">
 <meta property="article:author" content="BeichenZhuo">
 <meta property="article:tag" content="PRBS">
 <meta property="article:tag" content="伺服控制">
@@ -16,11 +16,11 @@
 <meta name="twitter:image" content="https://beichenzhuo.github.io/img/dog-icon.png"><script type="application/ld+json">{
   "@context": "https://schema.org",
   "@type": "BlogPosting",
-  "headline": "对比四种系统激励方式：正弦定点、Chirp扫频、PRBS伪随机、锤击法",
+  "headline": "系统频域扫频：激励选择与数据处理",
   "url": "https://beichenzhuo.github.io/2024/07/03/ZBC-%E4%BC%BA%E6%9C%8D%E7%B3%BB%E7%BB%9F%E8%BE%A8%E8%AF%86%E5%9B%9B%E5%A4%A7%E6%BF%80%E5%8A%B1%E6%B7%B1%E5%BA%A6%E5%AF%B9%E6%AF%94/",
   "image": "https://beichenzhuo.github.io/img/dog-icon.png",
   "datePublished": "2024-07-03T15:15:42.000Z",
-  "dateModified": "2026-07-03T07:28:33.147Z",
+  "dateModified": "2026-07-19T13:53:31.688Z",
   "author": [
     {
       "@type": "Person",
@@ -157,165 +157,184 @@
   },
   autoDarkmode: false
 }</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
-  title: '对比四种系统激励方式：正弦定点、Chirp扫频、PRBS伪随机、锤击法',
+  title: '系统频域扫频：激励选择与数据处理',
   isHighlightShrink: false,
   isToc: true,
   pageType: 'post'
-}</script><link rel="stylesheet" href="/css/custom.css"><meta name="generator" content="Hexo 8.1.2"></head><body><div class="bg-animation" id="web_bg" style="background: [object Object];"></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">BeichenZhuo的Blog</span></a><a class="nav-page-title" href="/"><span class="site-name">对比四种系统激励方式：正弦定点、Chirp扫频、PRBS伪随机、锤击法</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div></div></nav><div id="post-info"><h1 class="post-title">对比四种系统激励方式：正弦定点、Chirp扫频、PRBS伪随机、锤击法</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-07-03T15:15:42.000Z" title="发表于 2024-07-03 23:15:42">2024-07-03</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-07-03T07:28:33.147Z" title="更新于 2026-07-03 15:28:33">2026-07-03</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>做伺服带宽测试、谐振辨识、系统建模、控制器参数整定，绕不开四种经典激励方式：<strong>单频定点正弦、Chirp线性扫频、PRBS伪随机序列、锤击脉冲法</strong>。</p>
-<p>很多工程开发者最大的核心困惑，也是行业最易混淆的知识点：</p>
+}</script><link rel="stylesheet" href="/css/custom.css"><meta name="generator" content="Hexo 8.1.2"></head><body><div class="bg-animation" id="web_bg" style="background: [object Object];"></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">BeichenZhuo的Blog</span></a><a class="nav-page-title" href="/"><span class="site-name">系统频域扫频：激励选择与数据处理</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div></div></nav><div id="post-info"><h1 class="post-title">系统频域扫频：激励选择与数据处理</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2024-07-03T15:15:42.000Z" title="发表于 2024-07-03 23:15:42">2024-07-03</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-07-19T13:53:31.688Z" title="更新于 2026-07-19 21:53:31">2026-07-19</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>伺服系统带宽测试、谐振辨识、模型辨识以及控制器参数整定，工程上普遍采用四种经典激励方式：<strong>单频定点正弦扫频、Chirp线性扫频、PRBS伪随机序列、锤击脉冲法</strong>。</p>
+<p>然而，实际应用中存在大量易混淆的核心问题：</p>
 <ul>
-<li><p>为什么正弦扫频必须等待稳态，不能直接采瞬态数据？</p>
-</li>
-<li><p>Chirp到底属于稳态辨识还是瞬态辨识？真实频谱形态是什么样？</p>
-</li>
-<li><p>PRBS与锤击法都是宽频激励，二者底层原理的本质差异在哪里？</p>
-</li>
-<li><p>工程上到底什么时候用直接FFT、什么时候用互相关？Welch平均法的核心作用与适用场景？</p>
+<li>正弦扫频为何必须等待稳态响应？直接采集瞬态数据会导致什么偏差？</li>
+<li>Chirp扫频究竟属于稳态辨识还是瞬态辨识？其频谱形态如何？</li>
+<li>PRBS与锤击法均为宽频激励，底层原理的根本差异是什么？</li>
+<li>何时采用直接FFT，何时采用互相关H1估计？Welch平均法的作用与适用场景是什么？</li>
+</ul>
+<p>本文将从<strong>激励机理、频谱特征、数学原理、数据处理算法</strong>四个维度，系统解构上述问题，为工程选型提供明确依据。</p>
+<hr>
+<h2 id="一、激励方式原理分类"><a href="#一、激励方式原理分类" class="headerlink" title="一、激励方式原理分类"></a>一、激励方式原理分类</h2><h3 id="1-稳态遍历型（正弦、慢速Chirp）"><a href="#1-稳态遍历型（正弦、慢速Chirp）" class="headerlink" title="1. 稳态遍历型（正弦、慢速Chirp）"></a>1. 稳态遍历型（正弦、慢速Chirp）</h3><p>该类激励依赖<strong>正弦相干确定性信号</strong>，逐频点或连续缓慢扫频获取系统的稳态增益与相位。信号相干性强、信噪比高，是高精度建模与标定的首选方案。</p>
+<p><strong>核心机理</strong>：利用信号自身的相干性抑制噪声，无需大量统计平均，单周期数据即可达到较高精度。</p>
+<h3 id="2-宽带统计型（PRBS、锤击）"><a href="#2-宽带统计型（PRBS、锤击）" class="headerlink" title="2. 宽带统计型（PRBS、锤击）"></a>2. 宽带统计型（PRBS、锤击）</h3><p>该类激励一次性覆盖全频段，依靠<strong>时域统计相关性</strong>（PRBS）或<strong>系统瞬态冲击响应</strong>（锤击法）来辨识系统频响。适用于工业强噪声环境，但对数据处理算法有特殊要求。</p>
+<p><strong>核心机理</strong>：通过多周期平均、互相关运算压制不相关的随机噪声，以计算量换取抗噪鲁棒性。</p>
+<hr>
+<h2 id="二、四种激励方式逐一深度解析"><a href="#二、四种激励方式逐一深度解析" class="headerlink" title="二、四种激励方式逐一深度解析"></a>二、四种激励方式逐一深度解析</h2><h3 id="1-单频定点正弦扫频（标准稳态辨识金标准）"><a href="#1-单频定点正弦扫频（标准稳态辨识金标准）" class="headerlink" title="1. 单频定点正弦扫频（标准稳态辨识金标准）"></a>1. 单频定点正弦扫频（标准稳态辨识金标准）</h3><p><strong>本质</strong>：纯稳态响应辨识，每个频点独立激励，必须等待瞬态分量完全衰减。</p>
+<p><strong>操作流程</strong>：对每个预设频率点，输入单一固定频率的正弦信号，系统经历短暂的瞬态振荡后进入等幅同相稳态，此时方可采集输入输出数据。瞬态数据包含零输入响应和暂态误差，不能直接用于频响计算。</p>
+<p><strong>频谱特性</strong>：单根离散谱线，能量集中在单一频率，无其他频率分量，信噪比最高。</p>
+<p><strong>数据处理</strong>：直接采用 $ H(f) = \dfrac{Y(f)}{U(f)} $（FFT复数相除），无需平均，精度最高。</p>
+<p><strong>优势与局限</strong>：</p>
+<ul>
+<li>幅频、相频精度最佳，谐振峰、相位滞后辨识最准确，是Bode图的标定基准。</li>
+<li>完全排除瞬态误差，适用于陷波滤波器设计、伺服带宽标定、控制器参数精准整定。</li>
+<li>测试效率极低，逐点等待耗时最长。</li>
+</ul>
+<p><strong>典型场景</strong>：产品出厂标定、学术实验、高精度模型辨识、机械谐振精准定位。</p>
+<hr>
+<h3 id="2-Chirp线性扫频（连续变频正弦）"><a href="#2-Chirp线性扫频（连续变频正弦）" class="headerlink" title="2. Chirp线性扫频（连续变频正弦）"></a>2. Chirp线性扫频（连续变频正弦）</h3><p><strong>本质</strong>：串行连续变频激励，属于<strong>准稳态遍历</strong>，与PRBS的并行激励截然不同。</p>
+<p><strong>慢速Chirp（工程推荐）</strong>：扫频速率满足 $ k \ll \dfrac{B^2}{Q} $（$B$为系统带宽，$Q$为阻尼系数），频率变化足够缓慢，系统在每个瞬时频率上近似达到稳态，等价于无数个定点正弦的无缝拼接，精度接近定点正弦。</p>
+<p><strong>快速Chirp</strong>：扫频速率过快，前一频率的瞬态响应尚未衰减即接入下一频率，输出包含多个频率的瞬态叠加，导致频响失真、谐振峰被抹平、辨识带宽偏小。</p>
+<p><strong>频谱特性</strong>：线性Chirp在带宽内幅频近似平坦，仅时域截断处存在轻微吉布斯纹波；对数Chirp低频扫速快、高频扫速慢，高频能量占比偏高。</p>
+<p><strong>算法兼容性</strong>：Chirp可直接使用直接FFT计算，也可采用互相关或Welch平均法。高信噪比环境下直接FFT效率最高；强噪声环境下切换至Welch法可有效压制随机干扰，无精度副作用。</p>
+<p><strong>典型场景</strong>：现场快速调试、产线批量测试、中等精度Bode图快速获取，是定点正弦的有效替代。</p>
+<hr>
+<h3 id="3-PRBS伪随机序列"><a href="#3-PRBS伪随机序列" class="headerlink" title="3. PRBS伪随机序列"></a>3. PRBS伪随机序列</h3><p><strong>本质</strong>：伪随机二值序列，<strong>全频段并行激励</strong>，依靠统计特性实现辨识。</p>
+<p><strong>频谱特性</strong>：PRBS功率谱密度呈 $ \mathrm{sinc}^2 $ 包络：</p>
+<script type="math/tex; mode=display">
+S_{uu}(f) \propto \mathrm{sinc}^2(\pi f T_c) = \left(\dfrac{\sin(\pi f T_c)}{\pi f T_c}\right)^2</script><p>其中 $ T_c $ 为码元时钟周期，$ f_c = 1/T_c $。低频段近似平坦，工程有效带宽约为 $ f_c/5 \sim f_c/3 $，高频段滚降明显（$f=f_c/3$ 处约 -3.9dB）。如需拓展高频，可施加逆sinc补偿滤波器。</p>
+<p><strong>强制使用相关算法的原因</strong>：伺服系统输出包含大量与激励不相关的随机噪声（电流噪声、量化误差、摩擦扰动等）。直接FFT无法区分响应与噪声。基于<strong>维纳-辛钦定理</strong>，采用H1估计：</p>
+<script type="math/tex; mode=display">
+H(f) = \dfrac{S_{uy}(f)}{S_{uu}(f)}</script><p>其中 $ S_{uy} $ 为输入-输出互功率谱，$ S_{uu} $ 为输入自功率谱。由于噪声与输入不相关，互相关后噪声贡献趋近于零，仅保留真实系统响应。</p>
+<p><strong>序列长度选取原则</strong>：总时长 $ T \ge 1/f_{\text{low}} $ 以保证低频分辨率；同时避免过长（通常3~5个完整周期），防止系统时变（温度漂移、摩擦变化）引入误差。</p>
+<p><strong>典型场景</strong>：工业强噪声环境、小信号无扰动辨识、伺服在线自整定、自动化建模。</p>
+<hr>
+<h3 id="4-锤击法（脉冲激励）"><a href="#4-锤击法（脉冲激励）" class="headerlink" title="4. 锤击法（脉冲激励）"></a>4. 锤击法（脉冲激励）</h3><p><strong>本质</strong>：纯瞬态响应辨识，无稳态过程。</p>
+<p><strong>原理</strong>：瞬时脉冲近似理想冲激，一次性激发系统全频段自由振荡。脉冲宽度 $ \tau $ 决定有效带宽 $ f_{\text{max}} \approx 1/(\pi \tau) $。线性系统下，脉冲响应 $ y(t) $ 即近似系统单位冲激响应 $ h(t) $，直接对 $ y(t) $ 做FFT得到频响。</p>
+<p><strong>优势与局限</strong>：</p>
+<ul>
+<li>优势：测试速度最快，单次冲击即可获得全频段粗略信息，操作简单。</li>
+<li>劣势：冲击能量大，易激发非线性、饱和失真；低频能量弱，信噪比极差，精度最低。</li>
+</ul>
+<p><strong>典型场景</strong>：机械结构模态初测、粗略谐振频率摸底，不适合伺服高精度建模。</p>
+<hr>
+<h2 id="三、频域计算方法深度拆解"><a href="#三、频域计算方法深度拆解" class="headerlink" title="三、频域计算方法深度拆解"></a>三、频域计算方法深度拆解</h2><p>时域数据采集后，频响函数（FRF）的计算方法直接影响Bode图精度。主流算法有三类：<strong>直接FFT法</strong>、<strong>H1互功率谱法</strong>、<strong>Welch平均法</strong>。以下逐一解析其原理、公式、适用条件。</p>
+<hr>
+<h3 id="1-直接复频响法（FFT直接相除）"><a href="#1-直接复频响法（FFT直接相除）" class="headerlink" title="1. 直接复频响法（FFT直接相除）"></a>1. 直接复频响法（FFT直接相除）</h3><p><strong>核心公式</strong>：</p>
+<script type="math/tex; mode=display">
+U(f) = \mathcal{F}\{u(t)\}, \quad Y(f) = \mathcal{F}\{y(t)\}, \quad H(f) = \dfrac{Y(f)}{U(f)}</script><p><strong>原理</strong>：对输入输出时域信号分别做FFT，再复数相除，得到各频点的增益与相位。该法隐含假设输入输出完全相干，无随机噪声。</p>
+<p><strong>优点</strong>：运算量最小，实时性强，无算法畸变，高信噪比下精度优秀。</p>
+<p><strong>缺点</strong>：无降噪能力，所有输出端噪声、扰动均直接计入频响，导致曲线毛刺严重。</p>
+<p><strong>适用场景</strong>：定点正弦、慢速Chirp等高信噪比确定性信号。</p>
+<hr>
+<h3 id="2-H1估计法（自-互功率谱法）"><a href="#2-H1估计法（自-互功率谱法）" class="headerlink" title="2. H1估计法（自/互功率谱法）"></a>2. H1估计法（自/互功率谱法）</h3><p><strong>核心原理</strong>：基于维纳-辛钦定理，利用随机噪声与激励信号互不相关的统计特性，通过多周期平均消除噪声干扰，提取纯净系统频响。该方法特别适用于PRBS等无固定稳态波形的宽带随机激励，也适用于强噪声环境下的确定性信号处理。</p>
+<p><strong>时域定义与基础公式</strong></p>
+<p>对于离散信号，首先计算输入信号的自相关函数 $R_{uu}[k] $ 和输入-输出的互相关函数 $ R_{uy}[k] $：</p>
+<script type="math/tex; mode=display">
+R_{uu}[k] = \frac{1}{N}\sum_{n=0}^{N-1} u[n]\,u[n+k]</script><script type="math/tex; mode=display">
+R_{uy}[k] = \frac{1}{N}\sum_{n=0}^{N-1} u[n]\,y[n+k]</script><p>其中 $ N $为采样点数，$k$ 为延迟索引。</p>
+<p>根据维纳-辛钦定理，对相关函数做傅里叶变换，可得到对应的自功率谱 $S_{uu}(f) $ 和互功率谱 $S_{uy}(f) $：</p>
+<script type="math/tex; mode=display">
+S_{uu}(f) = \mathcal{F}\{R_{uu}[k]\}, \qquad S_{uy}(f) = \mathcal{F}\{R_{uy}[k]\}</script><p><strong>频域共轭乘法实现（工程数值计算方式）</strong></p>
+<p>在工程实际中，为了提高计算效率并避免显式进行时域相关运算，功率谱通常直接在频域通过<strong>复数共轭乘法</strong>等效获得。设单段数据的输入信号FFT为 $U_i(f) $，输出信号FFT为 $Y_i(f) $，则该段的自功率谱和互功率谱可写为：</p>
+<script type="math/tex; mode=display">
+S_{uu,i}(f) = U_i(f) \cdot U_i^*(f)</script><script type="math/tex; mode=display">
+S_{uy,i}(f) = Y_i(f) \cdot U_i^*(f)</script><p>其中 $U_i^*(f) $ 表示 $ U_i(f) $ 的复数共轭。</p>
+<p>这一计算方式正是论文（Wandinger 第 2.6 节）中定义的 $ H_1 $ 估计的直接频域表达。当采集了 $ M $ 个独立周期（或分段）的数据时，分别计算每段的频域乘积，然后进行集总平均：</p>
+<script type="math/tex; mode=display">
+\bar{S}_{uy}(f) = \frac{1}{M}\sum_{i=1}^{M} S_{uy,i}(f), \qquad
+\bar{S}_{uu}(f) = \frac{1}{M}\sum_{i=1}^{M} S_{uu,i}(f)</script><p>最终H1估计的频响函数为：</p>
+<script type="math/tex; mode=display">
+H_1(f) = \frac{\bar{S}_{uy}(f)}{\bar{S}_{uu}(f)}
+= \frac{\sum_{i=1}^{M} \left( Y_i(f) \cdot U_i^*(f) \right)}{\sum_{i=1}^{M} \left( U_i(f) \cdot U_i^*(f) \right)}</script><p>该式严格对应论文中的核心公式（2.23） $ H_1(s) = \dfrac{\sum_{n=1}^{N}(A_n(s)E_n^*(s))}{\sum_{n=1}^{N}(E_n(s)E_n^*(s))} $（其中 $ A $ 对应输出 $ Y $，$ E $ 对应输入 $ U $）。这种频域共轭乘法等效于时域相关运算，同时完成了自/互谱的统计平均，能够有效压制与激励不相关的随机噪声。</p>
+<p><strong>降噪机理</strong></p>
+<p>设实际输出信号包含加性噪声 $y(t)=h(t)*u(t)+v(t) $，其中 $ v(t) $ 为与输入不相关的随机噪声。由于 $v(t) $ 与 $u(t) $ 统计独立，互相关 $R_{uv}[k]\to 0 $，因此在频域中 $S_{uv}(f)\to 0 $，使得互功率谱 $S_{uy}(f) $ 仅保留系统真实响应的贡献，噪声被有效抑制。</p>
+<p><strong>相干函数与质量评估</strong></p>
+<p>为评价频响估计的可靠性，引入相干函数 $\gamma^2(f) $。根据论文公式（2.24），其定义为：</p>
+<script type="math/tex; mode=display">
+\gamma^2(f) = \frac{\left|\bar{S}_{uy}(f)\right|^2}{\bar{S}_{uu}(f)\,\bar{S}_{yy}(f)}</script><p>相干函数取值在 $0\sim 1$ 之间，$\gamma^2=1$ 表示输出完全由输入决定，无噪声或非线性影响；$\gamma^2$ 越接近0，表明测量受噪声或非线性干扰越严重。工程中常以 {% raw %}$ \gamma^2>0.8 ${% endraw %} 作为数据可信的判据。</p>
+<p><strong>窗函数的选择</strong></p>
+<p>为避免频谱泄漏，通常对每段时域数据施加窗函数：</p>
+<ul>
+<li><p>对于连续随机信号（如PRBS、噪声激励），采用<strong>汉宁窗（Hanning）</strong>，其定义为：</p>
+<script type="math/tex; mode=display">
+w_H(n) = 0.5\left[1 - \cos\left(\frac{2\pi n}{N}\right)\right], \quad 0 \le n \le N</script></li>
+<li><p>对于瞬态脉冲信号（如锤击法），采用<strong>指数窗（Exponential Window）</strong>，其定义为：</p>
+<script type="math/tex; mode=display">
+w_E(n) = e^{-\frac{n}{N\tau}}, \quad 0 \le n \le N</script><p>其中 {% raw %}$\tau${% endraw %} 为时间常数，用于加速信号尾部衰减，减少截断效应。</p>
 </li>
 </ul>
-<h2 id="一、扫频方式原理分类"><a href="#一、扫频方式原理分类" class="headerlink" title="一、扫频方式原理分类"></a>一、扫频方式原理分类</h2><h3 id="1-稳态遍历型（正弦、慢速Chirp）"><a href="#1-稳态遍历型（正弦、慢速Chirp）" class="headerlink" title="1. 稳态遍历型（正弦、慢速Chirp）"></a>1. 稳态遍历型（正弦、慢速Chirp）</h3><p>依靠<strong>正弦相干确定性激励</strong>，逐频点获取系统稳态增益与相位，信号相干性极强、信噪比高，是高精度系统建模的核心方案。</p>
-<p><strong>核心本质</strong>：依靠信号自身相干性抑制噪声，无需统计平均，单周期数据即可实现高精度辨识。</p>
-<h3 id="2-宽带统计型（PRBS、锤击）"><a href="#2-宽带统计型（PRBS、锤击）" class="headerlink" title="2. 宽带统计型（PRBS、锤击）"></a>2. 宽带统计型（PRBS、锤击）</h3><p>一次性全频段覆盖激励，依靠<strong>时域统计相关性</strong>或<strong>系统瞬态冲激响应</strong>求解频响特性，适配工业复杂噪声环境。</p>
-<p><strong>核心本质</strong>：依靠多周期统计平均、互相关运算压制不相关随机噪声，牺牲计算速度换取辨识鲁棒性。</p>
-<hr>
-<h2 id="二、四种激励逐一深度解析"><a href="#二、四种激励逐一深度解析" class="headerlink" title="二、四种激励逐一深度解析"></a>二、四种激励逐一深度解析</h2><h3 id="1-单频定点正弦扫频（标准稳态辨识金标准）"><a href="#1-单频定点正弦扫频（标准稳态辨识金标准）" class="headerlink" title="1. 单频定点正弦扫频（标准稳态辨识金标准）"></a>1. 单频定点正弦扫频（标准稳态辨识金标准）</h3><p><strong>本质：纯稳态响应辨识</strong></p>
-<p>每次仅输入单一固定频率正弦信号，伺服系统会经历短暂瞬态振荡过程，必须等待瞬态分量完全衰减、输出变为稳定等幅同相振荡后，方可采集数据。瞬态数据包含零输入响应、暂态误差，无法表征系统真实频域特性。</p>
-<p><strong>频谱特性</strong>：单根离散谱线，带宽极窄、能量高度集中，无多余频率分量。</p>
-<p><strong>数据处理方式</strong>：直接 FFT 求解频响函数 $H(f)=\dfrac{Y(f)}{U(f)}$。</p>
-<p><strong>核心特点</strong>：</p>
-<ul>
-<li><p>幅频、相频精度最高，谐振峰、相位滞后辨识最精准，是工业Bode图标定金标准；</p>
-</li>
-<li><p>完全规避瞬态误差，可直接用于陷波滤波器设计、伺服带宽标定、控制器参数精准整定；</p>
-</li>
-<li><p>测试效率极低，需要逐频点等待稳态，耗时最长。</p>
-</li>
-</ul>
-<p><strong>适用场景</strong>：产品出厂标定、学术实验、高精度建模、机械谐振精准定位与参数校准。</p>
-<hr>
-<h3 id="2-Chirp线性扫频（连续变频正弦）"><a href="#2-Chirp线性扫频（连续变频正弦）" class="headerlink" title="2. Chirp线性扫频（连续变频正弦）"></a>2. Chirp线性扫频（连续变频正弦）</h3><p><strong>核心定位：既非纯瞬态辨识，也非白噪声辨识</strong></p>
-<p><strong>本质：串行连续准稳态遍历辨识</strong></p>
-<p>Chirp 是单频率时序依次遍历带宽，并非所有频率同时激励系统，和PRBS并行激励逻辑完全相反。</p>
-<p><strong>慢扫Chirp（工程推荐）</strong>：满足扫频速率约束 $k \ll \dfrac{B^2}{Q}$（$B$为系统带宽，$Q$为阻尼系数），频率变化远慢于系统过渡过程，每个瞬时频率均可近似达到稳态，等价于无数个正弦稳态扫频无缝拼接。</p>
-<p><strong>快扫Chirp</strong>：前一频率瞬态响应未完全衰减，后一频率即刻接入，输出为多频率瞬态叠加响应，会造成频响失真、谐振峰抹平、辨识带宽偏小。</p>
-<p><strong>频谱特性说明</strong></p>
-<p>线性Chirp为工程默认使用类型，带宽内幅频特性近似均匀平坦，仅时域截断处存在轻微吉布斯纹波，频谱平坦度优于PRBS；对数Chirp低频扫速快、高频扫速慢，高频停留时间更长，会出现高频能量占比偏高的现象。</p>
-<p><strong>Chirp数据算法适配规则</strong></p>
-<p>Chirp数学上完全支持互相关、Welch算法处理，不存在算法不兼容、引入额外误差的问题。常规高信噪比场景下，直接 $H=Y/U$ 计算精准、执行效率更高；工业强噪声场景（电流干扰、编码器抖动）中，对Chirp采用分段互功率谱Welch平均法，可有效压制不相关随机噪声，仅牺牲少量计算速度，无精度损失。</p>
-<p><strong>适用场景</strong>：现场快速调试、产线批量测试、中等精度Bode图快速获取、替代低效的定点正弦扫频。</p>
-<hr>
-<h3 id="3"><a href="#3" class="headerlink" title="3. "></a>3. <a href="/2024/07/03/ZBC-%E4%BC%AA%E9%9A%8F%E6%9C%BA%E5%BA%8F%E5%88%97PRBS%E4%B8%8EDeBruijn%E5%AF%B9%E6%AF%94/" title="伪随机序列：PRBS(M序列) vs De Bruijn序列">PRBS伪随机序列</a></h3><p><strong>本质：准白噪声、全频段并行激励、统计降噪辨识</strong></p>
-<p>与Chirp串行遍历逻辑完全相反，PRBS所有频率分量同时并行激励系统，依靠统计特性实现宽频辨识。</p>
-<p><strong>频谱特性</strong></p>
-<p>PRBS并非全频段绝对平坦，作为二值电平序列，其功率谱密度严格遵循 $\mathrm{sinc}^2$ 包络：</p>
-<p>$S_{uu}(f) \propto \mathrm{sinc}^2(\pi f T_c) = \left(\dfrac{\sin(\pi f T_c)}{\pi f T_c}\right)^2$</p>
-<p>其中 $T_c$ 为PRBS码元时钟周期，$f_c=1/T_c$ 为时钟频率。</p>
-<p>整体频谱特性：低频段（$f \ll f_c$）近似平坦，满足常规辨识需求；高频段衰减明显，在 $f=f_c/3$ 处幅度滚降约 -3.9dB；工程有效辨识带宽仅为 $f_c/5 \sim f_c/3$，超高频段需加逆sinc补偿滤波器修正频谱畸变。</p>
-<p><strong>PRBS强制使用相关类算法的核心原理</strong></p>
-<p>伺服系统存在大量与激励无关的加性随机噪声，包括电流噪声、编码器量化误差、摩擦扰动、负载波动等，直接FFT无法滤除干扰。基于维纳-辛钦定理，可通过H1频响估计公式彻底剥离噪声，提取纯净系统响应：</p>
-<p>$H(f) = \dfrac{S<em>{uy}(f)}{S</em>{uu}(f)}$</p>
-<p>式中 $S<em>{uy}(f)$ 为输入输出互功率谱，仅保留与激励相关的系统响应分量；$S</em>{uu}(f)$ 为输入自功率谱，表征激励自身频谱特性。随机噪声与PRBS激励不相关，经互相关运算后噪声分量统计平均趋近于0，仅保留线性系统真实响应。</p>
-<p><strong>PRBS序列长度选取原则</strong></p>
-<p>序列长度需兼顾低频辨识精度与系统LTI特性稳定性，禁止过短或过长：总时长必须满足 $T \ge 1/f_{\mathrm{low}}$，保证低频分辨率 $\Delta f=1/T$，避免低频特性失真；同时禁止过长时长激励，防止温度漂移、摩擦时变、积分位置偏移破坏线性时不变系统假设。系统时变较弱时，采集3~5个完整周期做频域平均，可完美兼顾低频精度与降噪效果，周期数量大于10时极易引入系统时变误差，需严格规避。</p>
-<p><strong>适用场景</strong>：工业强噪声现场、小信号无扰动辨识、伺服在线自整定、自动化系统建模。</p>
-<hr>
-<h3 id="4-锤击法（脉冲激励）"><a href="#4-锤击法（脉冲激励）" class="headerlink" title="4. 锤击法（脉冲激励）"></a>4. 锤击法（脉冲激励）</h3><p><strong>本质：纯瞬态响应辨识，无任何稳态过程</strong></p>
-<p>瞬时脉冲近似理想冲激信号，一次性激发系统全频段自由振荡，全程无稳态等待过程。脉冲有效带宽由脉冲宽度决定：$f_{\mathrm{max}} \approx 1/(\pi \tau)$，$\tau$ 为脉冲宽度。</p>
-<p>线性系统中，锤击响应近似系统核心动态响应 $y(t)=h(t)$，直接对瞬态响应波形做FFT变换即可得到系统频响特性。</p>
-<p><strong>核心优缺点</strong></p>
-<ul>
-<li><p>优势：测试速度最快，单次采集即可完成全频段激励，操作简单高效；</p>
-</li>
-<li><p>劣势：瞬时冲击能量极大，易激发机械非线性、饱和失真；低频激励能量弱、信噪比极差，是四种辨识方式中伺服建模精度最低的方案。</p>
-</li>
-</ul>
-<p><strong>适用场景</strong>：机械结构模态初测、粗略谐振频率摸底，不适合伺服高精度建模与带宽标定。</p>
-<hr>
-<h2 id="三、频域计算方法深度拆解"><a href="#三、频域计算方法深度拆解" class="headerlink" title="三、频域计算方法深度拆解"></a>三、频域计算方法深度拆解</h2><p>时域数据采集完成后，频响函数（FRF）的计算算法直接决定Bode图精度与可靠性。工程主流三类核心算法：直接FFT法、H1互相关功率谱法、Welch平均法，本节完整拆解算法原理、全套数学公式、优缺点与专属适用场景。</p>
-<h3 id="1-直接复频响法（FFT直接相除）"><a href="#1-直接复频响法（FFT直接相除）" class="headerlink" title="1. 直接复频响法（FFT直接相除）"></a>1. 直接复频响法（FFT直接相除）</h3><p><strong>核心公式</strong></p>
-<p>$U(f) = \mathcal{F}{u(t)},\quad Y(f) = \mathcal{F}{y(t)}$</p>
-<p>$H(f) = \dfrac{Y(f)}{U(f)}$</p>
-<p><strong>算法原理</strong>：对输入、输出时域信号直接做傅里叶变换，提取各频点复数幅值与相位，通过复数相除求解每一个频点的系统增益与相位滞后，算法默认输入输出信号完全相干、无随机噪声干扰。</p>
 <p><strong>优缺点</strong></p>
 <ul>
-<li><p>优点：运算量最小、实时性最强、无算法固有畸变，高信噪比下精度优异；</p>
-</li>
-<li><p>缺点：完全无降噪能力，输出端所有不相关噪声、扰动都会直接计入频响结果，导致曲线毛刺严重、谐振特征模糊。</p>
-</li>
+<li>优点：抗噪能力强，能有效压制随机扰动，辨识结果稳定可靠；附带相干函数可直观评估数据质量。</li>
+<li>缺点：需要多周期数据保证统计稳定性；计算量大于直接FFT；对系统时变性敏感，过长数据可能引入时变误差。</li>
 </ul>
-<p><strong>专属适用场景</strong>：定点正弦、慢速线性Chirp等高信噪比确定性信号辨识。</p>
-<h3 id="2-H1估计法（自-互相关功率谱法）"><a href="#2-H1估计法（自-互相关功率谱法）" class="headerlink" title="2. H1估计法（自/互相关功率谱法）"></a>2. H1估计法（自/互相关功率谱法）</h3><p><strong>核心原理</strong>：基于维纳-辛钦定理，时域相关函数与频域功率谱为傅里叶变换对，利用随机噪声与激励信号互不相关的统计特性，彻底滤除噪声干扰、提取纯净系统频响。</p>
-<p><strong>全套完整公式</strong></p>
-<p>离散信号自相关、互相关计算：</p>
-<p>$R<em>{uu}[k] = \dfrac{1}{N}\sum</em>{n=0}^{N-1} u[n]u[n+k]$</p>
-<p>$R<em>{uy}[k] = \dfrac{1}{N}\sum</em>{n=0}^{N-1} u[n]y[n+k]$</p>
-<p>相关函数经傅里叶变换得到对应功率谱：</p>
-<p>$S<em>{uu}(f) = \mathcal{F}{R</em>{uu}[k]}$</p>
-<p>$S<em>{uy}(f) = \mathcal{F}{R</em>{uy}[k]}$</p>
-<p>最终频响函数（H1估计）：</p>
-<p>$H<em>1(f) = \dfrac{S</em>{uy}(f)}{S_{uu}(f)}$</p>
-<p><strong>降噪逻辑</strong>：设输出含噪声信号 $y(t)=h(t)*u(t)+v(t)$，其中 $v(t)$ 为随机加性噪声，$v(t)$ 与输入 $u(t)$ 完全不相关，互相关运算后 $R_{uv}\to0$，可彻底剥离噪声分量，仅保留系统线性响应。</p>
-<p><strong>优缺点</strong></p>
-<ul>
-<li><p>优点：抗噪能力极强，可有效压制工业现场各类随机扰动，辨识结果稳定性大幅提升；</p>
-</li>
-<li><p>缺点：需要多周期完整数据保证统计稳定性，计算量大于直接FFT算法。</p>
-</li>
-</ul>
-<p><strong>专属适用场景</strong>：PRBS辨识标配算法、强噪声环境下的Chirp信号处理。</p>
-<h3 id="3-Welch平均法（工程终极最优算法）"><a href="#3-Welch平均法（工程终极最优算法）" class="headerlink" title="3. Welch平均法（工程终极最优算法）"></a>3. Welch平均法（工程终极最优算法）</h3><p><strong>核心定位</strong>：H1相关法的工程增强优化版，是专业辨识设备的底层默认算法。</p>
-<p><strong>算法完整步骤+全套公式</strong></p>
+<p><strong>专属适用场景</strong>：PRBS辨识的标准算法；强噪声环境下Chirp信号处理；需要量化数据可靠性的精密辨识任务。</p>
+<hr>
+<h3 id="3-Welch平均法（工程标准优化算法）"><a href="#3-Welch平均法（工程标准优化算法）" class="headerlink" title="3. Welch平均法（工程标准优化算法）"></a>3. Welch平均法（工程标准优化算法）</h3><p><strong>核心定位</strong>：H1估计的工程增强版，是专业辨识设备的底层默认算法。</p>
+<p><strong>算法步骤</strong>：</p>
 <ol>
-<li><p>长序列重叠分段：将完整时域数据拆分为多段短序列，段间默认50%重叠，弥补加窗操作带来的信号信息损失；</p>
-</li>
-<li><p>加窗抑制泄漏：每段数据叠加汉宁窗 $w[n]$，大幅抑制傅里叶变换的频谱泄漏问题；</p>
-</li>
-<li><p>逐段谱计算：对每一段加窗后的输入、输出数据，分别计算单段自功率谱 $S<em>{uu,i}(f)$、互功率谱 $S</em>{uy,i}(f)$；</p>
-</li>
-<li><p>集总平均降噪：对所有分段功率谱结果做算术平均，降低统计方差、平滑噪声毛刺。</p>
+<li><strong>重叠分段</strong>：将长序列时域数据分割为多段（通常50%重叠），以弥补加窗带来的信息损失。</li>
+<li><strong>加窗</strong>：每段数据施加窗函数（默认<strong>汉宁窗</strong>，针对瞬态信号可切换为指数窗）。</li>
+<li><strong>逐段谱计算</strong>：对每段加窗数据计算自功率谱 {% raw %}$ S_{uu,i}(f) ${% endraw %} 和互功率谱 {% raw %}$ S_{uy,i}(f) ${% endraw %}。</li>
+<li><p><strong>集总平均</strong>：对所有分段的功率谱进行算术平均，降低方差、平滑噪声：</p>
+<script type="math/tex; mode=display">
+\bar{S}_{uu}(f) = \frac{1}{M}\sum_{i=1}^{M} S_{uu,i}(f), \quad \bar{S}_{uy}(f) = \frac{1}{M}\sum_{i=1}^{M} S_{uy,i}(f)</script></li>
+<li><p><strong>频响计算</strong>：{% raw %}$ H_{\text{Welch}}(f) = \dfrac{\bar{S}_{uy}(f)}{\bar{S}_{uu}(f)} ${% endraw %}</p>
 </li>
 </ol>
-<p>$\bar{S}<em>{uu}(f) = \dfrac{1}{M}\sum</em>{i=1}^M S_{uu,i}(f)$</p>
-<p>$\bar{S}<em>{uy}(f) = \dfrac{1}{M}\sum</em>{i=1}^M S_{uy,i}(f)$</p>
-<p>最终频响函数：</p>
-<p>$H<em>{\mathrm{Welch}}(f) = \dfrac{\bar{S}</em>{uy}(f)}{\bar{S}_{uu}(f)}$</p>
-<p><strong>核心优势</strong>：同时解决频谱泄漏、随机噪声干扰、统计方差过大三大工程问题，输出频响曲线平滑、鲁棒性极强，适配绝大多数工业辨识场景。</p>
-<p><strong>优缺点</strong></p>
+<p><strong>核心优势</strong>：同时解决频谱泄漏、随机噪声、统计方差三大问题，输出曲线平滑，鲁棒性极强。</p>
+<p><strong>优缺点</strong>：</p>
 <ul>
-<li><p>优点：全场景通用、降噪能力最强、曲线无毛刺、辨识稳定性最高；</p>
-</li>
-<li><p>缺点：计算量为三类算法中最大，低频分辨率受单段数据长度限制。</p>
-</li>
+<li>优点：全场景通用，抗噪能力最强，曲线无毛刺，辨识稳定性最高。</li>
+<li>缺点：计算量最大，低频分辨率受单段数据长度限制（需权衡段长与分段数）。</li>
 </ul>
-<p><strong>适用场景</strong>：兼容所有激励方式，是工业高精度辨识、量产标定、学术研究的首选算法。</p>
-<h3 id="三类算法选型一句话总结"><a href="#三类算法选型一句话总结" class="headerlink" title="三类算法选型一句话总结"></a>三类算法选型一句话总结</h3><ul>
-<li><p>干净实验室环境、快速趋势预览 → 直接FFT（速度最优）</p>
-</li>
-<li><p>工业噪声环境、PRBS专属辨识 → H1相关法（经典标配）</p>
-</li>
-<li><p>高精度建模、极致曲线平滑度需求 → Welch平均法（业界最优）</p>
-</li>
-</ul>
+<p><strong>适用场景</strong>：兼容所有激励方式，是高精度建模、量产标定、学术研究的首选算法。</p>
 <hr>
-<h2 id="四、总结"><a href="#四、总结" class="headerlink" title="四、总结"></a>四、总结</h2><div class="table-container">
+<h3 id="三类算法选型总结"><a href="#三类算法选型总结" class="headerlink" title="三类算法选型总结"></a>三类算法选型总结</h3><div class="table-container">
 <table>
 <thead>
 <tr>
-<th><strong>激励方式</strong></th>
-<th><strong>响应类型</strong></th>
-<th><strong>频谱特性</strong></th>
-<th><strong>推荐核心算法</strong></th>
-<th><strong>是否需要稳态等待</strong></th>
-<th><strong>抗噪能力</strong></th>
-<th><strong>精度</strong></th>
-<th><strong>典型用途</strong></th>
+<th>场景</th>
+<th>推荐算法</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>干净实验室、快速趋势</td>
+<td>直接FFT</td>
+<td>运算最快，无额外开销</td>
+</tr>
+<tr>
+<td>工业噪声、PRBS</td>
+<td>H1相关法</td>
+<td>经典降噪，附带相干评估</td>
+</tr>
+<tr>
+<td>高精度、极致平滑</td>
+<td>Welch平均法</td>
+<td>综合性能最优，工程标准</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="四、激励方式与算法匹配总览表"><a href="#四、激励方式与算法匹配总览表" class="headerlink" title="四、激励方式与算法匹配总览表"></a>四、激励方式与算法匹配总览表</h2><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>激励方式</th>
+<th>响应类型</th>
+<th>频谱特性</th>
+<th>推荐核心算法</th>
+<th>需稳态等待</th>
+<th>抗噪能力</th>
+<th>精度</th>
+<th>典型用途</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>单频定点正弦</td>
 <td>纯稳态</td>
-<td>单谱线、能量极集中</td>
+<td>单谱线，能量集中</td>
 <td>直接FFT / Welch单频平均</td>
 <td>必须等待</td>
 <td>极强</td>
@@ -325,17 +344,17 @@
 <tr>
 <td>慢速线性Chirp</td>
 <td>准稳态</td>
-<td>带宽内均匀平坦、仅边缘轻微纹波</td>
+<td>带宽内均匀平坦，边缘轻微纹波</td>
 <td>直接FFT / Welch平均</td>
 <td>无需等待</td>
 <td>强</td>
 <td>高</td>
-<td>快速精准扫频、替代定点正弦</td>
+<td>快速精准扫频，替代定点正弦</td>
 </tr>
 <tr>
 <td>快速Chirp</td>
 <td>瞬态叠加</td>
-<td>平坦但存在严重瞬态畸变</td>
+<td>平坦但含瞬态畸变</td>
 <td>直接FFT（仅粗测）</td>
 <td>无意义</td>
 <td>一般</td>
@@ -345,7 +364,7 @@
 <tr>
 <td>PRBS伪随机</td>
 <td>统计准稳态</td>
-<td>sinc²包络、低频平坦、高频自然滚降</td>
+<td>sinc²包络，低频平坦，高频滚降</td>
 <td>H1相关法 / Welch法</td>
 <td>不需要</td>
 <td>最强</td>
@@ -355,8 +374,8 @@
 <tr>
 <td>锤击脉冲</td>
 <td>纯瞬态</td>
-<td>宽频分布、高频快速衰减、低频能量弱</td>
-<td>直接FFT</td>
+<td>宽频，高频衰减，低频能量弱</td>
+<td>直接FFT + 指数窗</td>
 <td>不需要</td>
 <td>极弱</td>
 <td>最低</td>
@@ -366,22 +385,57 @@
 </table>
 </div>
 <hr>
-<h2 id="五、核心易错结论总结"><a href="#五、核心易错结论总结" class="headerlink" title="五、核心易错结论总结"></a>五、核心易错结论总结</h2><h3 id="1-Chirp-与-PRBS-底层机理完全异构"><a href="#1-Chirp-与-PRBS-底层机理完全异构" class="headerlink" title="1. Chirp 与 PRBS 底层机理完全异构"></a>1. Chirp 与 PRBS 底层机理完全异构</h3><p>PRBS 依托全频率同时并行激励+统计平均降噪，频谱存在天然sinc²高频滚降，高频辨识精度受限；线性Chirp依托单频率时序排队遍历+正弦相干降噪，频谱均匀平坦，在无噪声环境下辨识精度更优。二者虽均为宽频辨识方案，但激励逻辑、频谱特性、降噪原理完全不同。</p>
-<h3 id="2-相关类算法为通用降噪方案，并非PRBS专属"><a href="#2-相关类算法为通用降噪方案，并非PRBS专属" class="headerlink" title="2. 相关类算法为通用降噪方案，并非PRBS专属"></a>2. 相关类算法为通用降噪方案，并非PRBS专属</h3><p>PRBS信号无固定稳态波形，必须依赖H1相关法、Welch法滤除噪声，否则有效信号会被噪声淹没；正弦、Chirp确定性信号默认使用直接FFT即可满足常规精度需求，但在强干扰工业现场，切换为Welch平均法可显著提升曲线稳定性，无精度副作用。</p>
-<h3 id="3-Welch法是工程辨识终极最优解"><a href="#3-Welch法是工程辨识终极最优解" class="headerlink" title="3. Welch法是工程辨识终极最优解"></a>3. Welch法是工程辨识终极最优解</h3><p>Welch法整合了重叠分段、加窗防泄漏、多段集总平均三大核心优化，是H1相关法的工程落地增强版，兼容四种所有激励信号，兼顾降噪能力与频谱精度，是工业设备、高精度建模的标准化算法。</p>
-<h2 id="六、场景选择"><a href="#六、场景选择" class="headerlink" title="六、场景选择"></a>六、场景选择</h2><ul>
-<li><p><strong>高精度标定、论文实验、滤波器设计</strong> → 定点正弦 + 直接FFT</p>
-</li>
-<li><p><strong>工业噪声大、小信号辨识、自动整定</strong> → PRBS + Welch平均法</p>
-</li>
-<li><p><strong>产线批量测试、效率精度兼顾</strong> → 慢速线性Chirp + 直接FFT</p>
-</li>
-<li><p><strong>算力充足、追求极致平滑稳定曲线</strong> → 任意激励 + Welch法</p>
-</li>
-<li><p><strong>机械结构粗略模态摸底</strong> → 锤击法 + 直接FFT</p>
-</li>
+<h2 id="五、核心易错结论总结"><a href="#五、核心易错结论总结" class="headerlink" title="五、核心易错结论总结"></a>五、核心易错结论总结</h2><h3 id="1-Chirp与PRBS底层机理完全异构"><a href="#1-Chirp与PRBS底层机理完全异构" class="headerlink" title="1. Chirp与PRBS底层机理完全异构"></a>1. Chirp与PRBS底层机理完全异构</h3><ul>
+<li><strong>Chirp</strong>：串行逐个频率遍历，利用正弦相干性，频谱平坦，适合无噪声或弱噪声场景。</li>
+<li><strong>PRBS</strong>：并行全频段激励，利用统计相关性降噪，频谱呈sinc²滚降，适合强噪声场景。</li>
 </ul>
-</article><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E4%BC%BA%E6%9C%8D%E6%8E%A7%E5%88%B6/">伺服控制</a><a class="post-meta__tags" href="/tags/PRBS/">PRBS</a><a class="post-meta__tags" href="/tags/%E9%A2%91%E5%9F%9F%E5%88%86%E6%9E%90/">频域分析</a></div><div class="post-share"><div class="social-share" data-image="/img/dog-icon.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2024/07/03/ZBC-%E5%AE%89%E5%B7%9D%E4%BC%BA%E6%9C%8D%E4%BD%8D%E7%BD%AE%E6%8C%87%E4%BB%A4%E9%99%B7%E6%B3%A2%E6%BB%A4%E6%B3%A2%E5%99%A8/" title="安川伺服源码推导位置指令陷波器"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">安川伺服源码推导位置指令陷波器</div></div><div class="info-2"><div class="info-item-1">基于安川伺服Pn14A/Pn14B振动抑制2功能，从源码推导离散状态空间方程到连续域传递函数</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/08/25/ZBC-%E5%8F%8C%E9%97%AD%E7%8E%AF%E4%BD%8D%E7%BD%AE%E5%8F%8D%E9%A6%88%E6%8E%A7%E5%88%B6/" title="双闭环位置反馈控制"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-25</div><div class="info-item-2">双闭环位置反馈控制</div></div><div class="info-2"><div class="info-item-1">半闭环、全闭环与双闭环位置反馈控制对比</div></div></div></a><a class="pagination-related" href="/2025/06/20/ZBC-%E5%8D%8F%E4%BD%9C%E8%87%82%E4%BC%BA%E6%9C%8D%E5%9B%9B%E7%8E%AF%E6%8E%A7%E5%88%B6/" title="协作臂伺服四环控制"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-06-20</div><div class="info-item-2">协作臂伺服四环控制</div></div><div class="info-2"><div class="info-item-1">协作臂伺服四环控制架构及阻抗模式分析</div></div></div></a><a class="pagination-related" href="/2024/07/03/ZBC-%E4%BC%AA%E9%9A%8F%E6%9C%BA%E5%BA%8F%E5%88%97PRBS%E4%B8%8EDeBruijn%E5%AF%B9%E6%AF%94/" title="伪随机序列：PRBS(M序列) vs De Bruijn序列"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2024-07-03</div><div class="info-item-2">伪随机序列：PRBS(M序列) vs De Bruijn序列</div></div><div class="info-2"><div class="info-item-1">比较PRBS与De Bruijn序列</div></div></div></a><a class="pagination-related" href="/2025/08/13/%E9%80%9A%E7%94%A8%E4%BC%BA%E6%9C%8DPPI%E5%8F%82%E6%95%B0%E5%90%AB%E4%B9%89/" title="通用伺服PPI参数含义"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-13</div><div class="info-item-2">通用伺服PPI参数含义</div></div><div class="info-2"><div class="info-item-1">解析通用伺服PPI参数含义，包括速度环增益，负载惯量，速度环积分，转矩指令低通滤波，位置环增益，速度前馈系数等</div></div></div></a><a class="pagination-related" href="/2025/09/05/%E4%BD%8D%E7%BD%AE%E6%8C%87%E4%BB%A4%E6%8F%92%E8%A1%A5%E4%B8%8E%E4%B8%8D%E6%8F%92%E8%A1%A5%E5%8C%BA%E5%88%AB/" title="位置指令插补与不插补区别"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-09-05</div><div class="info-item-2">位置指令插补与不插补区别</div></div><div class="info-2"><div class="info-item-1">位置指令插补与不插补的响应特性对比</div></div></div></a><a class="pagination-related" href="/2025/11/28/ZBC-PPI%E5%8F%82%E6%95%B0%E4%B8%8E%E5%85%B1%E6%8C%AF/" title="PPI参数与共振"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-11-28</div><div class="info-item-2">PPI参数与共振</div></div><div class="info-2"><div class="info-item-1">PPI参数(Kp、Kv、Ki)对低频共振的影响分析</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/dog-icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">BeichenZhuo</div><div class="author-info-description">伺服&机器人技术笔记</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">56</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">123</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/BeichenZhuo"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">email：1435148110@qq.com</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E6%89%AB%E9%A2%91%E6%96%B9%E5%BC%8F%E5%8E%9F%E7%90%86%E5%88%86%E7%B1%BB"><span class="toc-number">2.</span> <span class="toc-text">一、扫频方式原理分类</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E7%A8%B3%E6%80%81%E9%81%8D%E5%8E%86%E5%9E%8B%EF%BC%88%E6%AD%A3%E5%BC%A6%E3%80%81%E6%85%A2%E9%80%9FChirp%EF%BC%89"><span class="toc-number">2.1.</span> <span class="toc-text">1. 稳态遍历型（正弦、慢速Chirp）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%AE%BD%E5%B8%A6%E7%BB%9F%E8%AE%A1%E5%9E%8B%EF%BC%88PRBS%E3%80%81%E9%94%A4%E5%87%BB%EF%BC%89"><span class="toc-number">2.2.</span> <span class="toc-text">2. 宽带统计型（PRBS、锤击）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%9B%9B%E7%A7%8D%E6%BF%80%E5%8A%B1%E9%80%90%E4%B8%80%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90"><span class="toc-number">3.</span> <span class="toc-text">二、四种激励逐一深度解析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%8D%95%E9%A2%91%E5%AE%9A%E7%82%B9%E6%AD%A3%E5%BC%A6%E6%89%AB%E9%A2%91%EF%BC%88%E6%A0%87%E5%87%86%E7%A8%B3%E6%80%81%E8%BE%A8%E8%AF%86%E9%87%91%E6%A0%87%E5%87%86%EF%BC%89"><span class="toc-number">3.1.</span> <span class="toc-text">1. 单频定点正弦扫频（标准稳态辨识金标准）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Chirp%E7%BA%BF%E6%80%A7%E6%89%AB%E9%A2%91%EF%BC%88%E8%BF%9E%E7%BB%AD%E5%8F%98%E9%A2%91%E6%AD%A3%E5%BC%A6%EF%BC%89"><span class="toc-number">3.2.</span> <span class="toc-text">2. Chirp线性扫频（连续变频正弦）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3"><span class="toc-number">3.3.</span> <span class="toc-text">3. PRBS伪随机序列</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E9%94%A4%E5%87%BB%E6%B3%95%EF%BC%88%E8%84%89%E5%86%B2%E6%BF%80%E5%8A%B1%EF%BC%89"><span class="toc-number">3.4.</span> <span class="toc-text">4. 锤击法（脉冲激励）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E9%A2%91%E5%9F%9F%E8%AE%A1%E7%AE%97%E6%96%B9%E6%B3%95%E6%B7%B1%E5%BA%A6%E6%8B%86%E8%A7%A3"><span class="toc-number">4.</span> <span class="toc-text">三、频域计算方法深度拆解</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E7%9B%B4%E6%8E%A5%E5%A4%8D%E9%A2%91%E5%93%8D%E6%B3%95%EF%BC%88FFT%E7%9B%B4%E6%8E%A5%E7%9B%B8%E9%99%A4%EF%BC%89"><span class="toc-number">4.1.</span> <span class="toc-text">1. 直接复频响法（FFT直接相除）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-H1%E4%BC%B0%E8%AE%A1%E6%B3%95%EF%BC%88%E8%87%AA-%E4%BA%92%E7%9B%B8%E5%85%B3%E5%8A%9F%E7%8E%87%E8%B0%B1%E6%B3%95%EF%BC%89"><span class="toc-number">4.2.</span> <span class="toc-text">2. H1估计法（自&#x2F;互相关功率谱法）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Welch%E5%B9%B3%E5%9D%87%E6%B3%95%EF%BC%88%E5%B7%A5%E7%A8%8B%E7%BB%88%E6%9E%81%E6%9C%80%E4%BC%98%E7%AE%97%E6%B3%95%EF%BC%89"><span class="toc-number">4.3.</span> <span class="toc-text">3. Welch平均法（工程终极最优算法）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%89%E7%B1%BB%E7%AE%97%E6%B3%95%E9%80%89%E5%9E%8B%E4%B8%80%E5%8F%A5%E8%AF%9D%E6%80%BB%E7%BB%93"><span class="toc-number">4.4.</span> <span class="toc-text">三类算法选型一句话总结</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%80%BB%E7%BB%93"><span class="toc-number">5.</span> <span class="toc-text">四、总结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%A0%B8%E5%BF%83%E6%98%93%E9%94%99%E7%BB%93%E8%AE%BA%E6%80%BB%E7%BB%93"><span class="toc-number">6.</span> <span class="toc-text">五、核心易错结论总结</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Chirp-%E4%B8%8E-PRBS-%E5%BA%95%E5%B1%82%E6%9C%BA%E7%90%86%E5%AE%8C%E5%85%A8%E5%BC%82%E6%9E%84"><span class="toc-number">6.1.</span> <span class="toc-text">1. Chirp 与 PRBS 底层机理完全异构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E7%9B%B8%E5%85%B3%E7%B1%BB%E7%AE%97%E6%B3%95%E4%B8%BA%E9%80%9A%E7%94%A8%E9%99%8D%E5%99%AA%E6%96%B9%E6%A1%88%EF%BC%8C%E5%B9%B6%E9%9D%9EPRBS%E4%B8%93%E5%B1%9E"><span class="toc-number">6.2.</span> <span class="toc-text">2. 相关类算法为通用降噪方案，并非PRBS专属</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Welch%E6%B3%95%E6%98%AF%E5%B7%A5%E7%A8%8B%E8%BE%A8%E8%AF%86%E7%BB%88%E6%9E%81%E6%9C%80%E4%BC%98%E8%A7%A3"><span class="toc-number">6.3.</span> <span class="toc-text">3. Welch法是工程辨识终极最优解</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E5%9C%BA%E6%99%AF%E9%80%89%E6%8B%A9"><span class="toc-number">7.</span> <span class="toc-text">六、场景选择</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/03/11/DLR%E7%A2%B0%E6%92%9E%E6%A3%80%E6%B5%8B%E9%99%8D%E9%98%B6ESO%E8%A7%82%E6%B5%8B%E5%99%A8/" title="机器人碰撞检测————能量动量观测器的降阶ESO形式">机器人碰撞检测————能量动量观测器的降阶ESO形式</a><time datetime="2026-07-11T07:45:35.592Z" title="更新于 2026-07-11 15:45:35">2026-07-11</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/09/Visual%20ModelQ%20KeyGen/Visual_ModelQv7_KeyGen/Readme/" title="无标题">无标题</a><time datetime="2026-07-09T13:19:54.922Z" title="更新于 2026-07-09 21:19:54">2026-07-09</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/07/34/" title="无标题">无标题</a><time datetime="2026-07-07T13:19:45.853Z" title="更新于 2026-07-07 21:19:45">2026-07-07</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/03/30/ppp/" title="无标题">无标题</a><time datetime="2026-07-07T08:03:03.347Z" title="更新于 2026-07-07 16:03:03">2026-07-07</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/07/18/Ott%E4%B9%A6/" title="冗余和柔性关节机器人的笛卡尔阻抗控制————Ott">冗余和柔性关节机器人的笛卡尔阻抗控制————Ott</a><time datetime="2026-07-06T10:24:02.590Z" title="更新于 2026-07-06 18:24:02">2026-07-06</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2023 - 2026 By BeichenZhuo</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.5</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.5"></script><script src="/js/main.js?v=5.5.5"></script><div class="js-pjax"><script>(() => {
+<p>二者虽同为宽频，但激励逻辑、频谱形态、降噪原理截然不同，不可混淆。</p>
+<h3 id="2-相关类算法为通用降噪方案，并非PRBS专属"><a href="#2-相关类算法为通用降噪方案，并非PRBS专属" class="headerlink" title="2. 相关类算法为通用降噪方案，并非PRBS专属"></a>2. 相关类算法为通用降噪方案，并非PRBS专属</h3><ul>
+<li>PRBS必须依赖H1或Welch才能有效辨识，否则噪声淹没信号。</li>
+<li>正弦、Chirp可直接用FFT，但在强干扰环境下切换为Welch同样能提升稳定性，且无精度损失。</li>
+</ul>
+<h3 id="3-Welch法是工程辨识的终极标准"><a href="#3-Welch法是工程辨识的终极标准" class="headerlink" title="3. Welch法是工程辨识的终极标准"></a>3. Welch法是工程辨识的终极标准</h3><p>Welch集重叠分段、加窗防泄漏、多段平均于一体，是H1的工程强化版，兼容所有激励信号，在抗噪能力和频谱精度之间达到最佳平衡，是专业设备默认算法。</p>
+<h3 id="4-相干函数是数据质量的核心判据"><a href="#4-相干函数是数据质量的核心判据" class="headerlink" title="4. 相干函数是数据质量的核心判据"></a>4. 相干函数是数据质量的核心判据</h3><p>无论采用何种算法，都应计算$ \gamma^2 $ 以评估辨识可靠性。低相干值提示需调整激励参数或增加平均次数。</p>
+<hr>
+<h2 id="六、工程场景推荐选择"><a href="#六、工程场景推荐选择" class="headerlink" title="六、工程场景推荐选择"></a>六、工程场景推荐选择</h2><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>场景需求</th>
+<th>推荐激励</th>
+<th>推荐算法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>高精度标定、滤波器设计、学术实验</td>
+<td>定点正弦</td>
+<td>直接FFT</td>
+</tr>
+<tr>
+<td>工业现场强噪声、小信号、自整定</td>
+<td>PRBS</td>
+<td>Welch平均法（配合相干评估）</td>
+</tr>
+<tr>
+<td>产线批量测试、兼顾效率与精度</td>
+<td>慢速线性Chirp</td>
+<td>直接FFT / Welch</td>
+</tr>
+<tr>
+<td>计算资源充足、追求最佳平滑曲线</td>
+<td>任意激励</td>
+<td>Welch法</td>
+</tr>
+<tr>
+<td>机械结构粗略模态摸底</td>
+<td>锤击法</td>
+<td>直接FFT + 指数窗</td>
+</tr>
+</tbody>
+</table>
+</div>
+</article><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E4%BC%BA%E6%9C%8D%E6%8E%A7%E5%88%B6/">伺服控制</a><a class="post-meta__tags" href="/tags/PRBS/">PRBS</a><a class="post-meta__tags" href="/tags/%E9%A2%91%E5%9F%9F%E5%88%86%E6%9E%90/">频域分析</a></div><div class="post-share"><div class="social-share" data-image="/img/dog-icon.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2024/07/03/ZBC-%E5%AE%89%E5%B7%9D%E4%BC%BA%E6%9C%8D%E4%BD%8D%E7%BD%AE%E6%8C%87%E4%BB%A4%E9%99%B7%E6%B3%A2%E6%BB%A4%E6%B3%A2%E5%99%A8/" title="安川伺服源码推导位置指令陷波器"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">安川伺服源码推导位置指令陷波器</div></div><div class="info-2"><div class="info-item-1">基于安川伺服Pn14A/Pn14B振动抑制2功能，从源码推导离散状态空间方程到连续域传递函数</div></div></div></a><a class="pagination-related" href="/2024/02/11/Odive%E7%A3%81%E9%93%BE%E8%A7%82%E6%B5%8B%E5%99%A8/" title="Odrive非线性磁链观测器"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">Odrive非线性磁链观测器</div></div><div class="info-2"><div class="info-item-1">Odrive无感磁链观测器出自Junggi Lee等人2010年发表论文《Sensorless Control of Surface-Mount Permanent-Magnet Synchronous Motors Based on a Nonlinear Observer》</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/09/05/%E4%BD%8D%E7%BD%AE%E6%8C%87%E4%BB%A4%E6%8F%92%E8%A1%A5%E4%B8%8E%E4%B8%8D%E6%8F%92%E8%A1%A5%E5%8C%BA%E5%88%AB/" title="位置指令插补与不插补区别"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-09-05</div><div class="info-item-2">位置指令插补与不插补区别</div></div><div class="info-2"><div class="info-item-1">位置指令插补与不插补的响应特性对比</div></div></div></a><a class="pagination-related" href="/2025/06/20/ZBC-%E5%8D%8F%E4%BD%9C%E8%87%82%E4%BC%BA%E6%9C%8D%E5%9B%9B%E7%8E%AF%E6%8E%A7%E5%88%B6/" title="协作臂伺服四环控制"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-06-20</div><div class="info-item-2">协作臂伺服四环控制</div></div><div class="info-2"><div class="info-item-1">协作臂伺服四环控制架构及阻抗模式分析</div></div></div></a><a class="pagination-related" href="/2025/08/13/%E9%80%9A%E7%94%A8%E4%BC%BA%E6%9C%8DPPI%E5%8F%82%E6%95%B0%E5%90%AB%E4%B9%89/" title="通用伺服PPI参数含义"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-13</div><div class="info-item-2">通用伺服PPI参数含义</div></div><div class="info-2"><div class="info-item-1">解析通用伺服PPI参数含义，包括速度环增益，负载惯量，速度环积分，转矩指令低通滤波，位置环增益，速度前馈系数等</div></div></div></a><a class="pagination-related" href="/2025/11/28/ZBC-PPI%E5%8F%82%E6%95%B0%E4%B8%8E%E5%85%B1%E6%8C%AF/" title="PPI参数与共振"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-11-28</div><div class="info-item-2">PPI参数与共振</div></div><div class="info-2"><div class="info-item-1">PPI参数(Kp、Kv、Ki)对低频共振的影响分析</div></div></div></a><a class="pagination-related" href="/2025/06/25/ZBC-%E9%AB%98%E5%88%9BHD%E6%8E%A7%E5%88%B6%E6%80%BB%E7%BB%93/" title="Servotronix高创HD控制总结"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-06-25</div><div class="info-item-2">Servotronix高创HD控制总结</div></div><div class="info-2"><div class="info-item-1">高创HD控制原理及测试分析</div></div></div></a><a class="pagination-related" href="/2025/08/05/ZBC-%E5%85%B3%E8%8A%82%E6%A8%A1%E7%BB%84%E4%BC%BA%E6%9C%8D%E7%94%B5%E6%B5%81%E7%8E%AF/ZBC-%E5%85%B3%E8%8A%82%E6%A8%A1%E7%BB%84%E4%BC%BA%E6%9C%8D%E7%94%B5%E6%B5%81%E7%8E%AF/" title="关节模组伺服电流环"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-08-05</div><div class="info-item-2">关节模组伺服电流环</div></div><div class="info-2"><div class="info-item-1">关节模组伺服电流环延迟分析及建模</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/dog-icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">BeichenZhuo</div><div class="author-info-description">伺服&机器人技术笔记</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">63</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">139</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/BeichenZhuo"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">email：1435148110@qq.com</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%89%8D%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">前言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%80%E3%80%81%E6%BF%80%E5%8A%B1%E6%96%B9%E5%BC%8F%E5%8E%9F%E7%90%86%E5%88%86%E7%B1%BB"><span class="toc-number">2.</span> <span class="toc-text">一、激励方式原理分类</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E7%A8%B3%E6%80%81%E9%81%8D%E5%8E%86%E5%9E%8B%EF%BC%88%E6%AD%A3%E5%BC%A6%E3%80%81%E6%85%A2%E9%80%9FChirp%EF%BC%89"><span class="toc-number">2.1.</span> <span class="toc-text">1. 稳态遍历型（正弦、慢速Chirp）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E5%AE%BD%E5%B8%A6%E7%BB%9F%E8%AE%A1%E5%9E%8B%EF%BC%88PRBS%E3%80%81%E9%94%A4%E5%87%BB%EF%BC%89"><span class="toc-number">2.2.</span> <span class="toc-text">2. 宽带统计型（PRBS、锤击）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%8C%E3%80%81%E5%9B%9B%E7%A7%8D%E6%BF%80%E5%8A%B1%E6%96%B9%E5%BC%8F%E9%80%90%E4%B8%80%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90"><span class="toc-number">3.</span> <span class="toc-text">二、四种激励方式逐一深度解析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E5%8D%95%E9%A2%91%E5%AE%9A%E7%82%B9%E6%AD%A3%E5%BC%A6%E6%89%AB%E9%A2%91%EF%BC%88%E6%A0%87%E5%87%86%E7%A8%B3%E6%80%81%E8%BE%A8%E8%AF%86%E9%87%91%E6%A0%87%E5%87%86%EF%BC%89"><span class="toc-number">3.1.</span> <span class="toc-text">1. 单频定点正弦扫频（标准稳态辨识金标准）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Chirp%E7%BA%BF%E6%80%A7%E6%89%AB%E9%A2%91%EF%BC%88%E8%BF%9E%E7%BB%AD%E5%8F%98%E9%A2%91%E6%AD%A3%E5%BC%A6%EF%BC%89"><span class="toc-number">3.2.</span> <span class="toc-text">2. Chirp线性扫频（连续变频正弦）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-PRBS%E4%BC%AA%E9%9A%8F%E6%9C%BA%E5%BA%8F%E5%88%97"><span class="toc-number">3.3.</span> <span class="toc-text">3. PRBS伪随机序列</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E9%94%A4%E5%87%BB%E6%B3%95%EF%BC%88%E8%84%89%E5%86%B2%E6%BF%80%E5%8A%B1%EF%BC%89"><span class="toc-number">3.4.</span> <span class="toc-text">4. 锤击法（脉冲激励）</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%89%E3%80%81%E9%A2%91%E5%9F%9F%E8%AE%A1%E7%AE%97%E6%96%B9%E6%B3%95%E6%B7%B1%E5%BA%A6%E6%8B%86%E8%A7%A3"><span class="toc-number">4.</span> <span class="toc-text">三、频域计算方法深度拆解</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-%E7%9B%B4%E6%8E%A5%E5%A4%8D%E9%A2%91%E5%93%8D%E6%B3%95%EF%BC%88FFT%E7%9B%B4%E6%8E%A5%E7%9B%B8%E9%99%A4%EF%BC%89"><span class="toc-number">4.1.</span> <span class="toc-text">1. 直接复频响法（FFT直接相除）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-H1%E4%BC%B0%E8%AE%A1%E6%B3%95%EF%BC%88%E8%87%AA-%E4%BA%92%E5%8A%9F%E7%8E%87%E8%B0%B1%E6%B3%95%EF%BC%89"><span class="toc-number">4.2.</span> <span class="toc-text">2. H1估计法（自&#x2F;互功率谱法）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Welch%E5%B9%B3%E5%9D%87%E6%B3%95%EF%BC%88%E5%B7%A5%E7%A8%8B%E6%A0%87%E5%87%86%E4%BC%98%E5%8C%96%E7%AE%97%E6%B3%95%EF%BC%89"><span class="toc-number">4.3.</span> <span class="toc-text">3. Welch平均法（工程标准优化算法）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%89%E7%B1%BB%E7%AE%97%E6%B3%95%E9%80%89%E5%9E%8B%E6%80%BB%E7%BB%93"><span class="toc-number">4.4.</span> <span class="toc-text">三类算法选型总结</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%9B%9B%E3%80%81%E6%BF%80%E5%8A%B1%E6%96%B9%E5%BC%8F%E4%B8%8E%E7%AE%97%E6%B3%95%E5%8C%B9%E9%85%8D%E6%80%BB%E8%A7%88%E8%A1%A8"><span class="toc-number">5.</span> <span class="toc-text">四、激励方式与算法匹配总览表</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BA%94%E3%80%81%E6%A0%B8%E5%BF%83%E6%98%93%E9%94%99%E7%BB%93%E8%AE%BA%E6%80%BB%E7%BB%93"><span class="toc-number">6.</span> <span class="toc-text">五、核心易错结论总结</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Chirp%E4%B8%8EPRBS%E5%BA%95%E5%B1%82%E6%9C%BA%E7%90%86%E5%AE%8C%E5%85%A8%E5%BC%82%E6%9E%84"><span class="toc-number">6.1.</span> <span class="toc-text">1. Chirp与PRBS底层机理完全异构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-%E7%9B%B8%E5%85%B3%E7%B1%BB%E7%AE%97%E6%B3%95%E4%B8%BA%E9%80%9A%E7%94%A8%E9%99%8D%E5%99%AA%E6%96%B9%E6%A1%88%EF%BC%8C%E5%B9%B6%E9%9D%9EPRBS%E4%B8%93%E5%B1%9E"><span class="toc-number">6.2.</span> <span class="toc-text">2. 相关类算法为通用降噪方案，并非PRBS专属</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-Welch%E6%B3%95%E6%98%AF%E5%B7%A5%E7%A8%8B%E8%BE%A8%E8%AF%86%E7%9A%84%E7%BB%88%E6%9E%81%E6%A0%87%E5%87%86"><span class="toc-number">6.3.</span> <span class="toc-text">3. Welch法是工程辨识的终极标准</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-%E7%9B%B8%E5%B9%B2%E5%87%BD%E6%95%B0%E6%98%AF%E6%95%B0%E6%8D%AE%E8%B4%A8%E9%87%8F%E7%9A%84%E6%A0%B8%E5%BF%83%E5%88%A4%E6%8D%AE"><span class="toc-number">6.4.</span> <span class="toc-text">4. 相干函数是数据质量的核心判据</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%85%AD%E3%80%81%E5%B7%A5%E7%A8%8B%E5%9C%BA%E6%99%AF%E6%8E%A8%E8%8D%90%E9%80%89%E6%8B%A9"><span class="toc-number">7.</span> <span class="toc-text">六、工程场景推荐选择</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/02/11/Odive%E7%A3%81%E9%93%BE%E8%A7%82%E6%B5%8B%E5%99%A8/" title="Odrive非线性磁链观测器">Odrive非线性磁链观测器</a><time datetime="2026-07-19T18:00:22.103Z" title="更新于 2026-07-20 02:00:22">2026-07-20</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/07/03/ZBC-%E4%BC%BA%E6%9C%8D%E7%B3%BB%E7%BB%9F%E8%BE%A8%E8%AF%86%E5%9B%9B%E5%A4%A7%E6%BF%80%E5%8A%B1%E6%B7%B1%E5%BA%A6%E5%AF%B9%E6%AF%94/" title="系统频域扫频：激励选择与数据处理">系统频域扫频：激励选择与数据处理</a><time datetime="2026-07-19T13:53:31.688Z" title="更新于 2026-07-19 21:53:31">2026-07-19</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/11/25/%E6%BB%91%E8%86%9C%E8%A7%82%E6%B5%8B%E5%99%A8/" title="二阶滑模算法理论推导：Twisting / STA / 线性超螺旋（SOSML）">二阶滑模算法理论推导：Twisting / STA / 线性超螺旋（SOSML）</a><time datetime="2026-07-19T12:19:30.412Z" title="更新于 2026-07-19 20:19:30">2026-07-19</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/07/12/ZBC-%E6%89%B0%E5%8A%A8%E8%A7%82%E6%B5%8B%E5%99%A8/" title="扰动观测器">扰动观测器</a><time datetime="2026-07-19T04:04:17.323Z" title="更新于 2026-07-19 12:04:17">2026-07-19</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/17/PID%E6%95%B4%E5%AE%9A%E6%A0%87%E5%87%86%E2%80%94%E2%80%94%E8%B5%8B%E5%80%BC%E6%9C%80%E4%BC%98%E3%80%81%E5%AF%B9%E7%A7%B0%E6%9C%80%E4%BC%98%E3%80%81%E9%98%BB%E5%B0%BC%E6%9C%80%E4%BC%98/" title="PID整定标准——幅值最优、对称最优、阻尼最优">PID整定标准——幅值最优、对称最优、阻尼最优</a><time datetime="2026-07-17T14:51:40.510Z" title="更新于 2026-07-17 22:51:40">2026-07-17</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2023 - 2026 By BeichenZhuo</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.5</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.5"></script><script src="/js/main.js?v=5.5.5"></script><div class="js-pjax"><script>(() => {
   const loadMathjax = () => {
     if (!window.MathJax) {
       window.MathJax = {
