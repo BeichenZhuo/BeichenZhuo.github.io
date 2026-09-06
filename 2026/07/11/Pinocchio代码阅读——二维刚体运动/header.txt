@@ -1,0 +1,12 @@
+---
+title: Pinocchio代码阅读——二维刚体运动
+date: 2025-07-11 10:00:00
+tags:
+- Pinocchio
+- 刚体运动
+- SE(2)
+- 旋量
+- 旋转矩阵
+mathjax: true
+description: Pinocchio库中二维刚体运动(SE(2))的数学原理与代码实现，涵盖旋转矩阵、齐次变换、旋量理论与指数映射
+---

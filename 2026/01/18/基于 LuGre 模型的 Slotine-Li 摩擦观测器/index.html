@@ -1,0 +1,1090 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>基于 LuGre 模型的 Slotine-Li 摩擦观测器 | BeichenZhuo的Blog</title><meta name="author" content="BeichenZhuo"><meta name="copyright" content="BeichenZhuo"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="一种基于 LuGre 动态摩擦模型的 Slotine-Li 自适应摩擦观测器。该观测器通过**状态观测器**和**参数自适应律**的双重机制，实现对摩擦力矩的实时精准估计，并利用 Lyapunov 方法证明其稳定性。该方案适用于高精度机器人关节的摩擦补偿控制。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="基于 LuGre 模型的 Slotine-Li 摩擦观测器">
+<meta property="og:url" content="https://beichenzhuo.github.io/2026/01/18/%E5%9F%BA%E4%BA%8E%20LuGre%20%E6%A8%A1%E5%9E%8B%E7%9A%84%20Slotine-Li%20%E6%91%A9%E6%93%A6%E8%A7%82%E6%B5%8B%E5%99%A8/index.html">
+<meta property="og:site_name" content="BeichenZhuo的Blog">
+<meta property="og:description" content="一种基于 LuGre 动态摩擦模型的 Slotine-Li 自适应摩擦观测器。该观测器通过**状态观测器**和**参数自适应律**的双重机制，实现对摩擦力矩的实时精准估计，并利用 Lyapunov 方法证明其稳定性。该方案适用于高精度机器人关节的摩擦补偿控制。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://beichenzhuo.github.io/img/dog-icon.png">
+<meta property="article:published_time" content="2026-01-18T13:34:22.000Z">
+<meta property="article:modified_time" content="2026-07-19T18:44:55.352Z">
+<meta property="article:author" content="BeichenZhuo">
+<meta property="article:tag" content="Odrive">
+<meta property="article:tag" content="无感控制">
+<meta property="article:tag" content="磁链观测器">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://beichenzhuo.github.io/img/dog-icon.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "基于 LuGre 模型的 Slotine-Li 摩擦观测器",
+  "url": "https://beichenzhuo.github.io/2026/01/18/%E5%9F%BA%E4%BA%8E%20LuGre%20%E6%A8%A1%E5%9E%8B%E7%9A%84%20Slotine-Li%20%E6%91%A9%E6%93%A6%E8%A7%82%E6%B5%8B%E5%99%A8/",
+  "image": "https://beichenzhuo.github.io/img/dog-icon.png",
+  "datePublished": "2026-01-18T13:34:22.000Z",
+  "dateModified": "2026-07-19T18:44:55.352Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "BeichenZhuo",
+      "url": "https://BeichenZhuo.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://beichenzhuo.github.io/2026/01/18/%E5%9F%BA%E4%BA%8E%20LuGre%20%E6%A8%A1%E5%9E%8B%E7%9A%84%20Slotine-Li%20%E6%91%A9%E6%93%A6%E8%A7%82%E6%B5%8B%E5%99%A8/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.5"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: {"path":"/search.xml","preload":false,"top_n_per_article":-1,"unescape":false,"pagination":{"enable":false,"hitsPerPage":8},"languages":{"hits_empty":"未找到符合您查询的内容：${query}","hits_stats":"共找到 ${hits} 篇文章"}},
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '基于 LuGre 模型的 Slotine-Li 摩擦观测器',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="stylesheet" href="/css/custom.css"><meta name="generator" content="Hexo 8.1.2"></head><body><div class="bg-animation" id="web_bg" style="background: [object Object];"></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">BeichenZhuo的Blog</span></a><a class="nav-page-title" href="/"><span class="site-name">基于 LuGre 模型的 Slotine-Li 摩擦观测器</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"><div id="search-button"><span class="site-page social-icon search"><i class="fas fa-search fa-fw"></i><span> 搜索</span></span></div></div></nav><div id="post-info"><h1 class="post-title">基于 LuGre 模型的 Slotine-Li 摩擦观测器</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2026-01-18T13:34:22.000Z" title="发表于 2026-01-18 21:34:22">2026-01-18</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-07-19T18:44:55.352Z" title="更新于 2026-07-20 02:44:55">2026-07-20</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><p><div style="width:260px;border:1px solid #eee;border-radius:10px;padding:30px 20px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+  <a href="files/Le-Tien和Albu-Schaffer - 2018 - Robust Adaptive Tracking Control Based on State Feedback Controller With Integrator Terms for Elasti.pdf" target="_blank" style="text-decoration:none;color:#2196f3;">
+    <i class="fas fa-file-pdf" style="font-size:60px;"></i>
+    <p style="margin:12px 0 0 0;font-size:15px;">Robust Adaptive Tracking Control Based on State Feedback Controller With Integrator Terms for Elasti</p>
+  </a>
+</div></p>
+<h2 id="1-符号定义与物理含义"><a href="#1-符号定义与物理含义" class="headerlink" title="1. 符号定义与物理含义"></a>1. 符号定义与物理含义</h2><div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">符号</th>
+<th style="text-align:left">含义</th>
+<th style="text-align:left">单位</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">$\theta$</td>
+<td style="text-align:left">电机实际角位置（编码器测量）</td>
+<td style="text-align:left">rad</td>
+</tr>
+<tr>
+<td style="text-align:left">$\dot{\theta}$</td>
+<td style="text-align:left">电机实际角速度</td>
+<td style="text-align:left">rad/s</td>
+</tr>
+<tr>
+<td style="text-align:left">$\theta_d$</td>
+<td style="text-align:left">期望电机角位置（外环指令）</td>
+<td style="text-align:left">rad</td>
+</tr>
+<tr>
+<td style="text-align:left">$e = \theta_d - \theta$</td>
+<td style="text-align:left">电机位置跟踪误差</td>
+<td style="text-align:left">rad</td>
+</tr>
+<tr>
+<td style="text-align:left">$J$</td>
+<td style="text-align:left">电机转子转动惯量</td>
+<td style="text-align:left">kg·m²</td>
+</tr>
+<tr>
+<td style="text-align:left">$u$</td>
+<td style="text-align:left">电机控制力矩（指令输出）</td>
+<td style="text-align:left">N·m</td>
+</tr>
+<tr>
+<td style="text-align:left">$\tau_f$</td>
+<td style="text-align:left">真实摩擦力矩</td>
+<td style="text-align:left">N·m</td>
+</tr>
+<tr>
+<td style="text-align:left">$\hat{\tau}_f$</td>
+<td style="text-align:left">摩擦力矩估计值</td>
+<td style="text-align:left">N·m</td>
+</tr>
+<tr>
+<td style="text-align:left">$\Lambda$</td>
+<td style="text-align:left">滑模面增益（正数，决定收敛速度）</td>
+<td style="text-align:left">1/s</td>
+</tr>
+<tr>
+<td style="text-align:left">$K_D$</td>
+<td style="text-align:left">阻尼反馈增益（正数）</td>
+<td style="text-align:left">N·m·s/rad</td>
+</tr>
+<tr>
+<td style="text-align:left">$\Gamma$</td>
+<td style="text-align:left">自适应学习率（正数）</td>
+<td style="text-align:left">—</td>
+</tr>
+<tr>
+<td style="text-align:left">$z$</td>
+<td style="text-align:left">LuGre 模型内部状态（鬃毛平均变形量）</td>
+<td style="text-align:left">rad</td>
+</tr>
+<tr>
+<td style="text-align:left">$\hat{z}$</td>
+<td style="text-align:left">内部状态估计值</td>
+<td style="text-align:left">rad</td>
+</tr>
+<tr>
+<td style="text-align:left">$\tilde{z} = \hat{z} - z$</td>
+<td style="text-align:left">状态观测误差</td>
+<td style="text-align:left">rad</td>
+</tr>
+<tr>
+<td style="text-align:left">$\Phi_0$</td>
+<td style="text-align:left">鬃毛刚度系数</td>
+<td style="text-align:left">N·m/rad</td>
+</tr>
+<tr>
+<td style="text-align:left">$\Phi_1$</td>
+<td style="text-align:left">鬃毛阻尼系数</td>
+<td style="text-align:left">N·m·s/rad</td>
+</tr>
+<tr>
+<td style="text-align:left">$\Phi_2$</td>
+<td style="text-align:left">粘滞摩擦系数</td>
+<td style="text-align:left">N·m·s/rad</td>
+</tr>
+<tr>
+<td style="text-align:left">$\tilde{\Phi} = \hat{\Phi} - \Phi$</td>
+<td style="text-align:left">参数估计误差</td>
+<td style="text-align:left">同参数单位</td>
+</tr>
+<tr>
+<td style="text-align:left">$\Psi$</td>
+<td style="text-align:left">由速度决定的正定对角矩阵</td>
+<td style="text-align:left">1/s</td>
+</tr>
+<tr>
+<td style="text-align:left">$v = \dot{\theta}_d + \Lambda e$</td>
+<td style="text-align:left">参考速度（避免加速度测量）</td>
+<td style="text-align:left">rad/s</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="2-问题陈述与推导目标"><a href="#2-问题陈述与推导目标" class="headerlink" title="2. 问题陈述与推导目标"></a>2. 问题陈述与推导目标</h2><p><strong>控制目标</strong>：设计力矩指令 $u$，使电机实际位置 $\theta$ 跟踪期望位置 $\theta<em>d$，即 $\lim</em>{t\to\infty} e(t) = 0$。</p>
+<p><strong>核心挑战</strong>：摩擦力矩 $\tau_f$ 具有<strong>强非线性、动态迟滞、参数时变</strong>特性，且其内部状态 $z$ 不可直接测量。</p>
+<p><strong>解决思路</strong>：</p>
+<ul>
+<li>采用 <strong>LuGre 动态模型</strong> 描述摩擦力的动态特性</li>
+<li>设计<strong>状态观测器</strong>实时估计不可测的内部状态 $z$</li>
+<li>设计<strong>自适应律</strong>在线更新摩擦参数 $\Phi$</li>
+<li>通过 <strong>Lyapunov 方法</strong> 证明整个闭环系统的稳定性</li>
+</ul>
+<hr>
+<h2 id="3-电机端动力学方程（推导起点）"><a href="#3-电机端动力学方程（推导起点）" class="headerlink" title="3. 电机端动力学方程（推导起点）"></a>3. 电机端动力学方程（推导起点）</h2><p>根据牛顿第二定律，电机转子的转动方程为：</p>
+<script type="math/tex; mode=display">
+J\ddot{\theta} + \tau_s = u - \tau_f \tag{1}</script><p>其中 $\tau_s$ 为弹簧反作用力矩（柔性关节特有，在纯电机端控制中可并入扰动项处理，此处为保持推导聚焦于摩擦，后续将 $\tau_s$ 视为已知可测/可前馈的量）。为简化推导，我们将 $\tau_s$ 合并到控制律的 PD 项中处理，聚焦于 $\tau_f$ 的估计。</p>
+<p>将 (1) 改写为：</p>
+<script type="math/tex; mode=display">
+J\ddot{\theta} = u - \tau_f - \tau_s \tag{2}</script><hr>
+<h2 id="4-Slotine-Li-滑模面设计"><a href="#4-Slotine-Li-滑模面设计" class="headerlink" title="4. Slotine-Li 滑模面设计"></a>4. Slotine-Li 滑模面设计</h2><h3 id="4-1-定义误差变量"><a href="#4-1-定义误差变量" class="headerlink" title="4.1 定义误差变量"></a>4.1 定义误差变量</h3><p>位置跟踪误差：</p>
+<script type="math/tex; mode=display">
+e = \theta_d - \theta \tag{3}</script><p>速度跟踪误差：</p>
+<script type="math/tex; mode=display">
+\dot{e} = \dot{\theta}_d - \dot{\theta} \tag{4}</script><h3 id="4-2-定义滑模面（复合误差）"><a href="#4-2-定义滑模面（复合误差）" class="headerlink" title="4.2 定义滑模面（复合误差）"></a>4.2 定义滑模面（复合误差）</h3><p>将位置误差和速度误差组合为一个标量变量：</p>
+<script type="math/tex; mode=display">
+s = \dot{e} + \Lambda e \tag{5}</script><p>其中 $\Lambda &gt; 0$ 为设计参数。</p>
+<p><strong>为什么这样做？</strong> 如果 $s = 0$，则 $\dot{e} = -\Lambda e$，这是一个一阶齐次微分方程，其解为 $e(t) = e(0)e^{-\Lambda t}$，指数收敛到 0。因此，<strong>控制目标转化为将 $s$ 驱赶到 0</strong>。</p>
+<h3 id="4-3-定义参考速度"><a href="#4-3-定义参考速度" class="headerlink" title="4.3 定义参考速度"></a>4.3 定义参考速度</h3><p>为了避免直接测量加速度 $\ddot{\theta}$（噪声太大），引入参考速度：</p>
+<script type="math/tex; mode=display">
+v = \dot{\theta}_d + \Lambda e \tag{6}</script><p>由 (5) 和 (6) 可得关键关系：</p>
+<script type="math/tex; mode=display">
+s = v - \dot{\theta} \tag{7}</script><p><strong>验证</strong>：$v - \dot{\theta} = \dot{\theta}_d + \Lambda e - \dot{\theta} = (\dot{\theta}_d - \dot{\theta}) + \Lambda e = \dot{e} + \Lambda e = s$ ✓</p>
+<h3 id="4-4-将动力学改写为误差形式"><a href="#4-4-将动力学改写为误差形式" class="headerlink" title="4.4 将动力学改写为误差形式"></a>4.4 将动力学改写为误差形式</h3><p>由 (7) 得：</p>
+<script type="math/tex; mode=display">
+\dot{\theta} = v - s \tag{8}</script><p>对时间求导：</p>
+<script type="math/tex; mode=display">
+\ddot{\theta} = \dot{v} - \dot{s} \tag{9}</script><p>代入 (2)：</p>
+<script type="math/tex; mode=display">
+J(\dot{v} - \dot{s}) = u - \tau_f - \tau_s \tag{10}</script><p>整理得<strong>误差动态方程</strong>：</p>
+<script type="math/tex; mode=display">
+J\dot{s} = u - \tau_f - J\dot{v} - \tau_s \tag{11}</script><hr>
+<h2 id="5-LuGre-动态摩擦模型"><a href="#5-LuGre-动态摩擦模型" class="headerlink" title="5. LuGre 动态摩擦模型"></a>5. LuGre 动态摩擦模型</h2><h3 id="5-1-模型结构"><a href="#5-1-模型结构" class="headerlink" title="5.1 模型结构"></a>5.1 模型结构</h3><p>LuGre 模型将摩擦力描述为接触面鬃毛的平均行为（论文公式 9-10）：</p>
+<script type="math/tex; mode=display">
+\tau_f = \Phi_0 z_0 - \Phi_1 \Psi z_1 + \Phi_2 \dot{\theta} \tag{12}</script><p>其中：</p>
+<ul>
+<li>$\Phi_0 z_0$：弹性力（鬃毛弹簧），$\Phi_0$ 为刚度系数</li>
+<li>$-\Phi_1 \Psi z_1$：阻尼力，$\Phi_1$ 为阻尼系数</li>
+<li>$\Phi_2 \dot{\theta}$：粘滞力，$\Phi_2$ 为粘滞系数</li>
+<li>$\Psi$ 为由速度决定的正定对角矩阵</li>
+</ul>
+<h3 id="5-2-内部状态的演化方程（论文公式-11）"><a href="#5-2-内部状态的演化方程（论文公式-11）" class="headerlink" title="5.2 内部状态的演化方程（论文公式 11）"></a>5.2 内部状态的演化方程（论文公式 11）</h3><script type="math/tex; mode=display">
+\dot{z}_0 = \dot{\theta} - \Psi z_0 \tag{13a}</script><script type="math/tex; mode=display">
+\dot{z}_1 = \dot{\theta} - \Psi z_1 \tag{13b}</script><h3 id="5-3-关键观察：两类未知量"><a href="#5-3-关键观察：两类未知量" class="headerlink" title="5.3 关键观察：两类未知量"></a>5.3 关键观察：两类未知量</h3><div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">类型</th>
+<th style="text-align:left">符号</th>
+<th style="text-align:left">特性</th>
+<th style="text-align:left">解决方法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>参数（系数）</strong></td>
+<td style="text-align:left">$\Phi_0, \Phi_1, \Phi_2$</td>
+<td style="text-align:left">随温度缓慢变化</td>
+<td style="text-align:left">自适应律在线更新</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>状态（变量）</strong></td>
+<td style="text-align:left">$z_0, z_1$</td>
+<td style="text-align:left">每一瞬间都在变化，不可测</td>
+<td style="text-align:left">状态观测器在线估计</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="6-控制律设计（发给电机的指令）"><a href="#6-控制律设计（发给电机的指令）" class="headerlink" title="6. 控制律设计（发给电机的指令）"></a>6. 控制律设计（发给电机的指令）</h2><p>由于真实 $\tau_f$ 未知，使用其估计值 $\hat{\tau}_f$ 替代，并加入 PD 反馈和积分项：</p>
+<script type="math/tex; mode=display">
+u = J\dot{v} + K_P e + K_D \dot{e} + K_I S(\phi) + \hat{\tau}_f \tag{14}</script><p>其中：</p>
+<ul>
+<li>$J\dot{v}$：惯量前馈</li>
+<li>$K_P e + K_D \dot{e}$：PD 反馈</li>
+<li>$K_I S(\phi)$：限幅积分器（消除稳态残差），$\phi = \int s\,dt$</li>
+<li>$\hat{\tau}_f$：摩擦前馈（本观测器的核心输出）</li>
+</ul>
+<blockquote>
+<p><strong>工程提示</strong>：在柔性关节机器人中，弹簧力矩 $\tau_s = K(\theta_d - \theta)$ 已知，可以并入 $K_P e$ 项处理，不影响推导。</p>
+</blockquote>
+<hr>
+<h2 id="7-闭环误差动态的推导"><a href="#7-闭环误差动态的推导" class="headerlink" title="7. 闭环误差动态的推导"></a>7. 闭环误差动态的推导</h2><p>将控制律 (14) 代入误差动态方程 (11)：</p>
+<script type="math/tex; mode=display">
+J\dot{s} = \left[J\dot{v} + K_P e + K_D \dot{e} + K_I S(\phi) + \hat{\tau}_f\right] - \tau_f - J\dot{v} - \tau_s</script><p>$J\dot{v}$ 项抵消，得到：</p>
+<script type="math/tex; mode=display">
+J\dot{s} = -K_D \dot{e} - K_P e - K_I S(\phi) + (\hat{\tau}_f - \tau_f) - \tau_s</script><p>利用 $s = \dot{e} + \Lambda e$，$\dot{e} = s - \Lambda e$，且将 $-K_P e$ 与 $-K_D \dot{e}$ 合并为 $-K_D s + (K_D\Lambda - K_P)e$，经过整理得到闭环误差动态（以 $s$ 表达）：</p>
+<script type="math/tex; mode=display">
+J\dot{s} + K_D s + K_I S(\phi) + \tau_s = \hat{\tau}_f - \tau_f \tag{15}</script><p><strong>这个方程极其重要！</strong> 它告诉我们：<strong>系统的跟踪误差由摩擦力估计误差 $\hat{\tau}_f - \tau_f$ 直接驱动。</strong> 如果我们能让 $\hat{\tau}_f \to \tau_f$，误差就会自动归零。</p>
+<hr>
+<h2 id="8-状态观测器设计"><a href="#8-状态观测器设计" class="headerlink" title="8. 状态观测器设计"></a>8. 状态观测器设计</h2><h3 id="8-1-为什么需要观测器？"><a href="#8-1-为什么需要观测器？" class="headerlink" title="8.1 为什么需要观测器？"></a>8.1 为什么需要观测器？</h3><p>摩擦力公式 (12) 中包含不可测的内部状态 $z_0, z_1$，必须在线估计。</p>
+<h3 id="8-2-观测器方程"><a href="#8-2-观测器方程" class="headerlink" title="8.2 观测器方程"></a>8.2 观测器方程</h3><p>模仿真实状态方程 (13)，并注入修正项（论文公式 38）：</p>
+<script type="math/tex; mode=display">
+\dot{\hat{z}}_0 = \dot{\theta} - \Psi \hat{z}_0 + s \tag{16a}</script><script type="math/tex; mode=display">
+\dot{\hat{z}}_1 = \dot{\theta} - \Psi \hat{z}_1 - s \tag{16b}</script><p><strong>修正项 $s$ 的作用</strong>：如果观测器估计的 $\hat{z}$ 不准，跟踪误差 $s$ 会变大，修正项会把 $\hat{z}$ 推向正确的方向。</p>
+<h3 id="8-3-观测误差动态推导"><a href="#8-3-观测误差动态推导" class="headerlink" title="8.3 观测误差动态推导"></a>8.3 观测误差动态推导</h3><p>定义观测误差：</p>
+<script type="math/tex; mode=display">
+\tilde{z}_0 = \hat{z}_0 - z_0, \quad \tilde{z}_1 = \hat{z}_1 - z_1 \tag{17}</script><p>真实 $z_0$ 满足 (13a)：$\dot{z}_0 = \dot{\theta} - \Psi z_0$。观测器 (16a) 减去真实值：</p>
+<script type="math/tex; mode=display">
+\dot{\hat{z}}_0 - \dot{z}_0 = (\dot{\theta} - \Psi \hat{z}_0 + s) - (\dot{\theta} - \Psi z_0)</script><p>化简得到观测误差动态：</p>
+<script type="math/tex; mode=display">
+\dot{\tilde{z}}_0 = -\Psi \tilde{z}_0 + s \tag{18a}</script><script type="math/tex; mode=display">
+\dot{\tilde{z}}_1 = -\Psi \tilde{z}_1 - s \tag{18b}</script><p><strong>关键结论</strong>：观测误差的动态方程是一个<strong>稳定的线性系统</strong>。只要 $s$ 存在（电机有跟踪误差），$\tilde{z}$ 会不断减小。当 $s$ 被控制到 0 时，观测误差也会指数衰减到 0。观测器的稳定性与电机状态是耦合的，将在第 11 节统一证明。</p>
+<hr>
+<h2 id="9-参数自适应律设计"><a href="#9-参数自适应律设计" class="headerlink" title="9. 参数自适应律设计"></a>9. 参数自适应律设计</h2><h3 id="9-1-定义参数估计误差"><a href="#9-1-定义参数估计误差" class="headerlink" title="9.1 定义参数估计误差"></a>9.1 定义参数估计误差</h3><script type="math/tex; mode=display">
+\tilde{\Phi}_0 = \hat{\Phi}_0 - \Phi_0, \quad
+\tilde{\Phi}_1 = \hat{\Phi}_1 - \Phi_1, \quad
+\tilde{\Phi}_2 = \hat{\Phi}_2 - \Phi_2 \tag{19}</script><p>真实参数 $\Phi$ 是常数（或缓慢变化），因此 $\dot{\tilde{\Phi}} = \dot{\hat{\Phi}}$。</p>
+<h3 id="9-2-构造李雅普诺夫候选函数"><a href="#9-2-构造李雅普诺夫候选函数" class="headerlink" title="9.2 构造李雅普诺夫候选函数"></a>9.2 构造李雅普诺夫候选函数</h3><p>我们构造一个包含<strong>所有误差源</strong>的标量函数：</p>
+<script type="math/tex; mode=display">
+V = \frac{1}{2} J s^2 + \frac{1}{2} \Phi_0 \tilde{z}_0^2 + \frac{1}{2} \Phi_1 \tilde{z}_1^2 + \frac{1}{2} \frac{\tilde{\Phi}_0^2}{\Gamma_0} + \frac{1}{2} \frac{\tilde{\Phi}_1^2}{\Gamma_1} + \frac{1}{2} \frac{\tilde{\Phi}_2^2}{\Gamma_2} \tag{20}</script><p><strong>各项物理意义</strong>：</p>
+<ul>
+<li>第1项：跟踪误差的动能</li>
+<li>第2-3项：观测误差的虚拟能量</li>
+<li>第4-6项：参数误差的虚拟能量</li>
+<li>$\Gamma_0, \Gamma_1, \Gamma_2 &gt; 0$ 为自适应学习率</li>
+</ul>
+<p><strong>如果 $V$ 始终减小，系统一定稳定。</strong></p>
+<h3 id="9-3-对-V-求导"><a href="#9-3-对-V-求导" class="headerlink" title="9.3 对 $V$ 求导"></a>9.3 对 $V$ 求导</h3><p>对时间求导（利用链式法则）：</p>
+<script type="math/tex; mode=display">
+\dot{V} = J s\dot{s} + \Phi_0 \tilde{z}_0 \dot{\tilde{z}}_0 + \Phi_1 \tilde{z}_1 \dot{\tilde{z}}_1 + \frac{\tilde{\Phi}_0}{\Gamma_0} \dot{\hat{\Phi}}_0 + \frac{\tilde{\Phi}_1}{\Gamma_1} \dot{\hat{\Phi}}_1 + \frac{\tilde{\Phi}_2}{\Gamma_2} \dot{\hat{\Phi}}_2 \tag{21}</script><h3 id="9-4-代入观测误差动态"><a href="#9-4-代入观测误差动态" class="headerlink" title="9.4 代入观测误差动态"></a>9.4 代入观测误差动态</h3><p>将 (18a) 和 (18b) 代入 (21)：</p>
+<script type="math/tex; mode=display">
+\dot{V} = J s\dot{s} + \Phi_0 \tilde{z}_0 (-\Psi \tilde{z}_0 + s) + \Phi_1 \tilde{z}_1 (-\Psi \tilde{z}_1 - s) + \frac{\tilde{\Phi}_0}{\Gamma_0} \dot{\hat{\Phi}}_0 + \frac{\tilde{\Phi}_1}{\Gamma_1} \dot{\hat{\Phi}}_1 + \frac{\tilde{\Phi}_2}{\Gamma_2} \dot{\hat{\Phi}}_2</script><p>展开：</p>
+<script type="math/tex; mode=display">
+\dot{V} = J s\dot{s} - \Phi_0 \Psi \tilde{z}_0^2 + \Phi_0 \tilde{z}_0 s - \Phi_1 \Psi \tilde{z}_1^2 - \Phi_1 \tilde{z}_1 s + \frac{\tilde{\Phi}_0}{\Gamma_0} \dot{\hat{\Phi}}_0 + \frac{\tilde{\Phi}_1}{\Gamma_1} \dot{\hat{\Phi}}_1 + \frac{\tilde{\Phi}_2}{\Gamma_2} \dot{\hat{\Phi}}_2 \tag{22}</script><h3 id="9-5-代入闭环误差动态"><a href="#9-5-代入闭环误差动态" class="headerlink" title="9.5 代入闭环误差动态"></a>9.5 代入闭环误差动态</h3><p>从 (15) 解出 $J\dot{s}$：</p>
+<script type="math/tex; mode=display">
+J\dot{s} = -K_D s - K_I S(\phi) + (\hat{\tau}_f - \tau_f) - \tau_s \tag{23}</script><p>将 (23) 代入 (22) 的第一项 $J s\dot{s}$：</p>
+<script type="math/tex; mode=display">
+\dot{V} = -K_D s^2 - K_I s S(\phi) + s(\hat{\tau}_f - \tau_f) - s\tau_s - \Phi_0 \Psi \tilde{z}_0^2 + \Phi_0 \tilde{z}_0 s - \Phi_1 \Psi \tilde{z}_1^2 - \Phi_1 \tilde{z}_1 s + \frac{\tilde{\Phi}_0}{\Gamma_0} \dot{\hat{\Phi}}_0 + \frac{\tilde{\Phi}_1}{\Gamma_1} \dot{\hat{\Phi}}_1 + \frac{\tilde{\Phi}_2}{\Gamma_2} \dot{\hat{\Phi}}_2 \tag{24}</script><h3 id="9-6-处理-hat-tau-f-tau-f-项-——-这是推导的关键！"><a href="#9-6-处理-hat-tau-f-tau-f-项-——-这是推导的关键！" class="headerlink" title="9.6 处理 $\hat{\tau}_f - \tau_f$ 项 —— 这是推导的关键！"></a>9.6 处理 $\hat{\tau}_f - \tau_f$ 项 —— 这是推导的关键！</h3><p>我们将摩擦力估计误差展开。由 (12) 的真实值和估计值：</p>
+<script type="math/tex; mode=display">
+\tau_f = \Phi_0 z_0 - \Phi_1 \Psi z_1 + \Phi_2 \dot{\theta}</script><script type="math/tex; mode=display">
+\hat{\tau}_f = \hat{\Phi}_0 \hat{z}_0 - \hat{\Phi}_1 \Psi \hat{z}_1 + \hat{\Phi}_2 v</script><p>两者相减：</p>
+<script type="math/tex; mode=display">
+\hat{\tau}_f - \tau_f = \hat{\Phi}_0 \hat{z}_0 - \Phi_0 z_0 - \hat{\Phi}_1 \Psi \hat{z}_1 + \Phi_1 \Psi z_1 + \hat{\Phi}_2 v - \Phi_2 \dot{\theta}</script><p><strong>技巧</strong>：将每项拆成“状态误差”和“参数误差”两部分。</p>
+<p>对于第一项：</p>
+<script type="math/tex; mode=display">
+\hat{\Phi}_0 \hat{z}_0 - \Phi_0 z_0 = \hat{\Phi}_0 \hat{z}_0 - \Phi_0 \hat{z}_0 + \Phi_0 \hat{z}_0 - \Phi_0 z_0 = \tilde{\Phi}_0 \hat{z}_0 + \Phi_0 \tilde{z}_0</script><p>同理：</p>
+<script type="math/tex; mode=display">
+\hat{\Phi}_1 \Psi \hat{z}_1 - \Phi_1 \Psi z_1 = \tilde{\Phi}_1 \Psi \hat{z}_1 + \Phi_1 \Psi \tilde{z}_1</script><p>对于粘滞项，注意估计值使用参考速度 $v$，真实值使用 $\dot{\theta}$，$v = \dot{\theta} + s$：</p>
+<script type="math/tex; mode=display">
+\hat{\Phi}_2 v - \Phi_2 \dot{\theta} = \tilde{\Phi}_2 v + \Phi_2 (v - \dot{\theta}) = \tilde{\Phi}_2 v + \Phi_2 s</script><p>因此：</p>
+<script type="math/tex; mode=display">
+\hat{\tau}_f - \tau_f = \tilde{\Phi}_0 \hat{z}_0 + \Phi_0 \tilde{z}_0 - \tilde{\Phi}_1 \Psi \hat{z}_1 - \Phi_1 \Psi \tilde{z}_1 + \tilde{\Phi}_2 v + \Phi_2 s \tag{25}</script><h3 id="9-7-将-25-代入-24-并整理"><a href="#9-7-将-25-代入-24-并整理" class="headerlink" title="9.7 将 (25) 代入 (24) 并整理"></a>9.7 将 (25) 代入 (24) 并整理</h3><p>将 (25) 的每一部分代入 (24) 中对应的 $s(\hat{\tau}_f - \tau_f)$ 项：</p>
+<script type="math/tex; mode=display">
+s(\hat{\tau}_f - \tau_f) = s\tilde{\Phi}_0 \hat{z}_0 + s\Phi_0 \tilde{z}_0 - s\tilde{\Phi}_1 \Psi \hat{z}_1 - s\Phi_1 \Psi \tilde{z}_1 + s\tilde{\Phi}_2 v + \Phi_2 s^2</script><p>代入 (24)：</p>
+<script type="math/tex; mode=display">
+\dot{V} = -K_D s^2 - K_I s S(\phi) - s\tau_s - \Phi_0 \Psi \tilde{z}_0^2 - \Phi_1 \Psi \tilde{z}_1^2 + \Phi_2 s^2</script><script type="math/tex; mode=display">
++ \Phi_0 \tilde{z}_0 s - \Phi_0 \tilde{z}_0 s + \Phi_1 \tilde{z}_1 s - \Phi_1 \tilde{z}_1 s</script><p><strong>观察</strong>：$\Phi_0 \tilde{z}_0 s$ 和 $-\Phi_0 \tilde{z}_0 s$ 完美抵消！$\Phi_1 \tilde{z}_1 s$ 和 $-\Phi_1 \tilde{z}_1 s$ 也完美抵消！</p>
+<p>剩下的含参数的项为：</p>
+<script type="math/tex; mode=display">
+\dot{V} = -(K_D - \Phi_2) s^2 - K_I s S(\phi) - s\tau_s - \Phi_0 \Psi \tilde{z}_0^2 - \Phi_1 \Psi \tilde{z}_1^2 + \tilde{\Phi}_0 \left(s\hat{z}_0 + \frac{\dot{\hat{\Phi}}_0}{\Gamma_0}\right) + \tilde{\Phi}_1 \left(-s\Psi\hat{z}_1 + \frac{\dot{\hat{\Phi}}_1}{\Gamma_1}\right) + \tilde{\Phi}_2 \left(s v + \frac{\dot{\hat{\Phi}}_2}{\Gamma_2}\right) \tag{26}</script><h3 id="9-8-选择自适应律消去-tilde-Phi-项"><a href="#9-8-选择自适应律消去-tilde-Phi-项" class="headerlink" title="9.8 选择自适应律消去 $\tilde{\Phi}$ 项"></a>9.8 选择自适应律消去 $\tilde{\Phi}$ 项</h3><p>为了让 $\dot{V} \leq 0$，我们<strong>强制令所有含有 $\tilde{\Phi}$ 的括号项等于 0</strong>：</p>
+<script type="math/tex; mode=display">
+s\hat{z}_0 + \frac{\dot{\hat{\Phi}}_0}{\Gamma_0} = 0 \quad \Rightarrow \quad \dot{\hat{\Phi}}_0 = -\Gamma_0 \hat{z}_0 s</script><script type="math/tex; mode=display">
+-s\Psi\hat{z}_1 + \frac{\dot{\hat{\Phi}}_1}{\Gamma_1} = 0 \quad \Rightarrow \quad \dot{\hat{\Phi}}_1 = \Gamma_1 \Psi \hat{z}_1 s</script><script type="math/tex; mode=display">
+s v + \frac{\dot{\hat{\Phi}}_2}{\Gamma_2} = 0 \quad \Rightarrow \quad \dot{\hat{\Phi}}_2 = -\Gamma_2 v s</script><p>得到最终的<strong>自适应更新律</strong>：</p>
+<script type="math/tex; mode=display">
+\boxed{\dot{\hat{\Phi}}_0 = -\Gamma_0 \hat{z}_0 s} \tag{27a}</script><script type="math/tex; mode=display">
+\boxed{\dot{\hat{\Phi}}_1 = \Gamma_1 \Psi \hat{z}_1 s} \tag{27b}</script><script type="math/tex; mode=display">
+\boxed{\dot{\hat{\Phi}}_2 = -\Gamma_2 v s} \tag{27c}</script><p><strong>与论文公式 (46) 的对应关系</strong>：</p>
+<ul>
+<li>第 11 节将展示完整的推广形式，包含矩阵增益 $A^{-1}K$ 和更一般的回归矩阵 $Y$。当前推导针对一维情形，已揭示本质结构。</li>
+</ul>
+<p><strong>符号说明</strong>：文中定义的 $\Gamma$ 是标量自适应增益，与下文矩阵形式 $\boldsymbol{\Gamma}$（对角正定）对应时，一维情形直接取 $\boldsymbol{\Gamma} = \Gamma$。</p>
+<p><strong>自适应律的物理含义</strong>：</p>
+<blockquote>
+<p>参数的变化率 = 学习率 × 当前运动信号 × 当前跟踪误差</p>
+<p><strong>如果电机有跟踪误差 $s$，参数就会被持续修正；当 $s \to 0$ 时，参数停止变化。</strong></p>
+</blockquote>
+<hr>
+<h2 id="10-稳定性证明"><a href="#10-稳定性证明" class="headerlink" title="10. 稳定性证明"></a>10. 稳定性证明</h2><h3 id="10-1-将自适应律代入-dot-V"><a href="#10-1-将自适应律代入-dot-V" class="headerlink" title="10.1 将自适应律代入 $\dot{V}$"></a>10.1 将自适应律代入 $\dot{V}$</h3><p>将 (27a)-(27c) 代入 (26)，所有带 $\tilde{\Phi}$ 的项消失，得到：</p>
+<script type="math/tex; mode=display">
+\dot{V} = -(K_D - \Phi_2) s^2 - K_I s S(\phi) - s\tau_s - \Phi_0 \Psi \tilde{z}_0^2 - \Phi_1 \Psi \tilde{z}_1^2 \tag{28}</script><h3 id="10-2-分析各项的符号"><a href="#10-2-分析各项的符号" class="headerlink" title="10.2 分析各项的符号"></a>10.2 分析各项的符号</h3><ul>
+<li>$-(K_D - \Phi_2) s^2$：需保证 $K_D &gt; \Phi_2$（足够大的阻尼），此项为负</li>
+<li>$-K_I s S(\phi)$：积分项的特殊性质<ul>
+<li>当 $|\phi| &lt; \epsilon$ 时，$S(\phi) = \phi$，此项为 $-K_I s\phi = -K_I \phi \dot{\phi} = -\frac{K_I}{2} \frac{d}{dt}(\phi^2)$</li>
+<li>当 $|\phi| \geq \epsilon$ 时，$S(\phi) = 0$，此项为 0</li>
+</ul>
+</li>
+<li>$-s\tau_s$：弹簧力矩项，对于自由空间无外力 ($\tau_s=0$) 时为 0；在接触时被动耗散</li>
+<li>$-\Phi_0 \Psi \tilde{z}_0^2 \leq 0$：观测误差耗散项（因为 $\Phi_0 &gt; 0, \Psi &gt; 0$）</li>
+<li>$-\Phi_1 \Psi \tilde{z}_1^2 \leq 0$：观测误差耗散项</li>
+</ul>
+<h3 id="10-3-利用积分项的耗散性质"><a href="#10-3-利用积分项的耗散性质" class="headerlink" title="10.3 利用积分项的耗散性质"></a>10.3 利用积分项的耗散性质</h3><p>分析 $-K_I s S(\phi)$ 项。考虑 $|\phi| &lt; \epsilon$ 时：</p>
+<script type="math/tex; mode=display">
+-K_I s S(\phi) = -K_I s\phi = -K_I \phi \dot{\phi} = -\frac{K_I}{2} \frac{d}{dt}(\phi^2)</script><p>因此 (28) 可重写为：</p>
+<script type="math/tex; mode=display">
+\dot{V} = -\underbrace{(K_D - \Phi_2) s^2}_{\text{阻尼耗散}} - \underbrace{\frac{K_I}{2} \frac{d}{dt}(\phi^2)}_{\text{积分器耗散（被限幅时归零）}} - \underbrace{\Phi_0 \Psi \tilde{z}_0^2}_{\text{观测器耗散}} - \underbrace{\Phi_1 \Psi \tilde{z}_1^2}_{\text{观测器耗散}} - \underbrace{s\tau_s}_{\text{被动交互耗散}}</script><h3 id="10-4-构造修正的李雅普诺夫函数"><a href="#10-4-构造修正的李雅普诺夫函数" class="headerlink" title="10.4 构造修正的李雅普诺夫函数"></a>10.4 构造修正的李雅普诺夫函数</h3><p>为了处理积分项中的 $\frac{d}{dt}(\phi^2)$，我们定义一个新的李雅普诺夫函数 $V_\phi$：</p>
+<script type="math/tex; mode=display">
+V_\phi = V + \frac{K_I}{2} S(\phi)^2 \tag{29}</script><p>对 $V_\phi$ 求导：</p>
+<p>当 $|\phi| &lt; \epsilon$ 时，$S(\phi) = \phi$，$\dot{S} = s$，有：</p>
+<script type="math/tex; mode=display">
+\dot{V}_\phi = \dot{V} + K_I S(\phi) \dot{S} = \dot{V} + K_I \phi s</script><p>将 (28) 代入，$-K_I s\phi + K_I \phi s = 0$ 完美抵消，得到：</p>
+<script type="math/tex; mode=display">
+\dot{V}_\phi = -(K_D - \Phi_2) s^2 - s\tau_s - \Phi_0 \Psi \tilde{z}_0^2 - \Phi_1 \Psi \tilde{z}_1^2 \tag{30}</script><p>当 $|\phi| \geq \epsilon$ 时，$S(\phi) = 0$，$\dot{S} = 0$，$\dot{V}_\phi = \dot{V} = -(K_D - \Phi_2) s^2 - s\tau_s - \Phi_0 \Psi \tilde{z}_0^2 - \Phi_1 \Psi \tilde{z}_1^2$。</p>
+<p>两种情况得到完全相同的结果！因此统一有：</p>
+<script type="math/tex; mode=display">
+\dot{V}_\phi = -(K_D - \Phi_2) s^2 - s\tau_s - \Phi_0 \Psi \tilde{z}_0^2 - \Phi_1 \Psi \tilde{z}_1^2 \tag{31}</script><h3 id="10-5-关键结论"><a href="#10-5-关键结论" class="headerlink" title="10.5 关键结论"></a>10.5 关键结论</h3><p>在<strong>自由空间无外力</strong>的情况下（$\tau_s = 0$）：</p>
+<script type="math/tex; mode=display">
+\dot{V}_\phi \leq -(K_D - \Phi_2) s^2 - \Phi_0 \Psi \tilde{z}_0^2 - \Phi_1 \Psi \tilde{z}_1^2 \leq 0 \tag{32}</script><p>只要选择 $K<em>D &gt; \Phi_2$（即反馈阻尼大于粘滞摩擦系数），$\dot{V}</em>\phi \leq 0$ 恒成立。</p>
+<p><strong>根据 Barbalat 引理</strong>：</p>
+<ul>
+<li>$V<em>\phi \geq 0$ 且 $\dot{V}</em>\phi \leq 0$，所以 $V_\phi$ 有界</li>
+<li>$\dot{V}<em>\phi$ 一致连续（因为 $\ddot{V}</em>\phi$ 有界）</li>
+<li>因此 $\lim<em>{t\to\infty} \dot{V}</em>\phi = 0$</li>
+</ul>
+<p>由 (32) 可得：</p>
+<script type="math/tex; mode=display">
+\lim_{t\to\infty} s = 0, \quad \lim_{t\to\infty} \tilde{z}_0 = 0, \quad \lim_{t\to\infty} \tilde{z}_1 = 0 \tag{33}</script><p><strong>最终结论</strong>：</p>
+<ul>
+<li>跟踪误差收敛：$s \to 0 \Rightarrow e \to 0, \dot{e} \to 0$</li>
+<li>观测误差收敛：$\hat{z}_0 \to z_0, \hat{z}_1 \to z_1$</li>
+<li>摩擦力估计误差收敛：$\hat{\tau}_f \to \tau_f$（由 (25) 可得）</li>
+</ul>
+<p><strong>注意</strong>：由 (31)，在接触有外力时 $-s\tau_s$ 代表被动耗散，系统仍然有界稳定。由于篇幅限制，接触交互的完整有界性分析将在本文后续版本中补充。</p>
+<hr>
+<h2 id="11-离散化迭代算法（可直接写代码）"><a href="#11-离散化迭代算法（可直接写代码）" class="headerlink" title="11. 离散化迭代算法（可直接写代码）"></a>11. 离散化迭代算法（可直接写代码）</h2><p>每一步（$\Delta t$ 为采样周期，如 0.001s）依次执行：</p>
+<p><strong>初始化</strong>：$\hat{z}_0 = \hat{z}_1 = 0$，$\hat{\Phi}_0 = \hat{\Phi}_{0,init}$，$\hat{\Phi}_1 = \hat{\Phi}_{1,init}$，$\hat{\Phi}_2 = \hat{\Phi}_{2,init}$，$\phi = 0$</p>
+<p><strong>每一步迭代</strong>：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">步骤</th>
+<th style="text-align:left">操作</th>
+<th style="text-align:left">公式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">1</td>
+<td style="text-align:left">读取编码器位置</td>
+<td style="text-align:left">$\theta_k$</td>
+</tr>
+<tr>
+<td style="text-align:left">2</td>
+<td style="text-align:left">计算速度</td>
+<td style="text-align:left">$ \dot{\theta}_k = (\theta_k - \theta_{k-1}) / \Delta t $</td>
+</tr>
+<tr>
+<td style="text-align:left">3</td>
+<td style="text-align:left">获取期望值</td>
+<td style="text-align:left">$\theta_{d,k}, \dot{\theta}_{d,k}$</td>
+</tr>
+<tr>
+<td style="text-align:left">4</td>
+<td style="text-align:left">计算误差</td>
+<td style="text-align:left">$e_k = \theta_{d,k} - \theta_k$，$\dot{e}_k = \dot{\theta}_{d,k} - \dot{\theta}_k$</td>
+</tr>
+<tr>
+<td style="text-align:left">5</td>
+<td style="text-align:left">计算滑模面</td>
+<td style="text-align:left">$s_k = \dot{e}_k + \Lambda e_k$</td>
+</tr>
+<tr>
+<td style="text-align:left">6</td>
+<td style="text-align:left">计算参考速度</td>
+<td style="text-align:left">$v_k = \dot{\theta}_{d,k} + \Lambda e_k$</td>
+</tr>
+<tr>
+<td style="text-align:left">7</td>
+<td style="text-align:left">更新积分子</td>
+<td style="text-align:left">$\phi_k = \phi_{k-1} + s_k \Delta t$，$\phi_k = \text{clamp}(\phi_k, -\epsilon, \epsilon)$</td>
+</tr>
+<tr>
+<td style="text-align:left">8</td>
+<td style="text-align:left"><strong>更新观测器</strong></td>
+<td style="text-align:left">$\dot{\hat{z}}_{0,k} = \dot{\theta}_k - \Psi_k \hat{z}_{0,k-1} + s_k$，$\hat{z}_{0,k} = \hat{z}_{0,k-1} + \dot{\hat{z}}_{0,k}\Delta t$<br>$\dot{\hat{z}}_{1,k} = \dot{\theta}_k - \Psi_k \hat{z}_{1,k-1} - s_k$，$\hat{z}_{1,k} = \hat{z}_{1,k-1} + \dot{\hat{z}}_{1,k}\Delta t$</td>
+</tr>
+<tr>
+<td style="text-align:left">9</td>
+<td style="text-align:left"><strong>更新自适应参数</strong></td>
+<td style="text-align:left">$\hat{\Phi}_{0,k} = \hat{\Phi}_{0,k-1} - \Gamma_0 \hat{z}_{0,k} s_k \Delta t$<br>$\hat{\Phi}_{1,k} = \hat{\Phi}_{1,k-1} + \Gamma_1 \Psi_k \hat{z}_{1,k} s_k \Delta t$<br>$\hat{\Phi}_{2,k} = \hat{\Phi}_{2,k-1} - \Gamma_2 v_k s_k \Delta t$</td>
+</tr>
+<tr>
+<td style="text-align:left">10</td>
+<td style="text-align:left"><strong>计算摩擦力</strong></td>
+<td style="text-align:left">$\hat{\tau}_{f,k} = \hat{\Phi}_{0,k} \hat{z}_{0,k} - \hat{\Phi}_{1,k} \Psi_k \hat{z}_{1,k} + \hat{\Phi}_{2,k} v_k$</td>
+</tr>
+<tr>
+<td style="text-align:left">11</td>
+<td style="text-align:left"><strong>计算控制力矩</strong></td>
+<td style="text-align:left">$u_k = J\dot{v}_k + K_P e_k + K_D \dot{e}_k + K_I \phi_k + \hat{\tau}_{f,k}$</td>
+</tr>
+<tr>
+<td style="text-align:left">12</td>
+<td style="text-align:left">输出力矩</td>
+<td style="text-align:left">发送 $u_k$ 到驱动器</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="12-多维推广（论文公式-46）"><a href="#12-多维推广（论文公式-46）" class="headerlink" title="12. 多维推广（论文公式 46）"></a>12. 多维推广（论文公式 46）</h2><p>论文公式 (46) 给出了多关节情形的完整自适应律（矩阵形式）：</p>
+<script type="math/tex; mode=display">
+\dot{\hat{\gamma}}_\theta = \Gamma_\theta Y_\theta(\hat{v}_\theta)^T A^{-1} K \hat{s}_\theta \tag{34a}</script><script type="math/tex; mode=display">
+\dot{\hat{\gamma}}_0 = \Gamma_0 Y_0(\hat{z}_0)^T A^{-1} K \hat{s}_\theta \tag{34b}</script><script type="math/tex; mode=display">
+\dot{\hat{\gamma}}_1 = -\Gamma_1 \Psi Y_1(\hat{z}_1)^T A^{-1} K \hat{s}_\theta \tag{34c}</script><script type="math/tex; mode=display">
+\dot{\hat{\gamma}}_2 = \Gamma_2 Y_2(v_\theta)^T A^{-1} K \hat{s}_\theta \tag{34d}</script><p>其中：</p>
+<ul>
+<li>$\gamma_\theta$ 为电机惯量参数</li>
+<li>$\gamma_0, \gamma_1, \gamma_2$ 为摩擦参数</li>
+<li>$Y_0, Y_1, Y_2$ 为回归矩阵</li>
+<li>$A, K$ 为控制器增益矩阵</li>
+<li>$\hat{s}_\theta$ 为滑模面向量</li>
+</ul>
+<p>这与本推导的标量形式 (27) 在本质上完全一致。</p>
+<hr>
+<h2 id="13-设计参数选择指南"><a href="#13-设计参数选择指南" class="headerlink" title="13. 设计参数选择指南"></a>13. 设计参数选择指南</h2><div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">参数</th>
+<th style="text-align:left">作用</th>
+<th style="text-align:left">建议值/选取原则</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">$\Lambda$</td>
+<td style="text-align:left">误差收敛速度</td>
+<td style="text-align:left">取 $10 \sim 30$ rad/s，越大收敛越快，但噪声放大</td>
+</tr>
+<tr>
+<td style="text-align:left">$K_D$</td>
+<td style="text-align:left">阻尼反馈</td>
+<td style="text-align:left">需满足 $K_D &gt; \Phi_2$（大于最大粘滞系数），通常取 $2\sqrt{K_P J}$</td>
+</tr>
+<tr>
+<td style="text-align:left">$K_P$</td>
+<td style="text-align:left">刚度反馈</td>
+<td style="text-align:left">根据期望闭环带宽选择</td>
+</tr>
+<tr>
+<td style="text-align:left">$K_I$</td>
+<td style="text-align:left">积分增益</td>
+<td style="text-align:left">取 $K_D/10 \sim K_D/5$，过大引起振荡</td>
+</tr>
+<tr>
+<td style="text-align:left">$\epsilon$</td>
+<td style="text-align:left">积分器限幅阈值</td>
+<td style="text-align:left">取 $0.1 \sim 1.0$，需保证大于稳态误差量级</td>
+</tr>
+<tr>
+<td style="text-align:left">$\Gamma_0, \Gamma_1, \Gamma_2$</td>
+<td style="text-align:left">自适应学习率</td>
+<td style="text-align:left">取 $1 \sim 10$，过大放大噪声，过小响应缓慢</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="14-总结"><a href="#14-总结" class="headerlink" title="14. 总结"></a>14. 总结</h2><p>本文档从最基础的电机动力学方程出发，系统推导了基于 LuGre 模型的 Slotine-Li 摩擦观测器：</p>
+<ol>
+<li><strong>状态观测器</strong> (16) 实时估计不可测的 LuGre 内部状态 $z$</li>
+<li><strong>自适应律</strong> (27) 在线更新摩擦参数 $\Phi$</li>
+<li><strong>控制律</strong> (14) 将摩擦力估计值作为前馈补偿</li>
+<li><strong>Lyapunov 方法</strong>证明了整个闭环系统的渐近稳定性</li>
+</ol>
+<p><strong>核心优势</strong>：</p>
+<ul>
+<li>同时处理摩擦的<strong>动态特性</strong>（通过 $z$）和<strong>参数不确定性</strong>（通过 $\Phi$）</li>
+<li>无需测量加速度</li>
+<li>全局渐近稳定</li>
+<li>适用于高精度机器人关节控制</li>
+</ul>
+<hr>
+<h2 id="附录-A：符号对照表（论文公式映射）"><a href="#附录-A：符号对照表（论文公式映射）" class="headerlink" title="附录 A：符号对照表（论文公式映射）"></a>附录 A：符号对照表（论文公式映射）</h2><div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">本文符号</th>
+<th style="text-align:left">2018 论文公式</th>
+<th style="text-align:left">说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">$s$</td>
+<td style="text-align:left">$\hat{s}_\theta$</td>
+<td style="text-align:left">滑模面（电机侧复合误差）</td>
+</tr>
+<tr>
+<td style="text-align:left">$v$</td>
+<td style="text-align:left">$v_\theta$ 或 $\hat{v}_\theta$</td>
+<td style="text-align:left">参考速度</td>
+</tr>
+<tr>
+<td style="text-align:left">$\Phi_0, \Phi_1, \Phi_2$</td>
+<td style="text-align:left">$\gamma_0, \gamma_1, \gamma_2$ 对应的参数</td>
+<td style="text-align:left">摩擦参数</td>
+</tr>
+<tr>
+<td style="text-align:left">$\Gamma_0, \Gamma_1, \Gamma_2$</td>
+<td style="text-align:left">$\Gamma_0, \Gamma_1, \Gamma_2$</td>
+<td style="text-align:left">自适应学习率</td>
+</tr>
+<tr>
+<td style="text-align:left">$Y$</td>
+<td style="text-align:left">$Y_0, Y_1, Y_2$</td>
+<td style="text-align:left">回归矩阵</td>
+</tr>
+</tbody>
+</table>
+</div>
+</article><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/%E6%97%A0%E6%84%9F%E6%8E%A7%E5%88%B6/">无感控制</a><a class="post-meta__tags" href="/tags/%E7%A3%81%E9%93%BE%E8%A7%82%E6%B5%8B%E5%99%A8/">磁链观测器</a><a class="post-meta__tags" href="/tags/Odrive/">Odrive</a></div><div class="post-share"><div class="social-share" data-image="/img/dog-icon.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2026/02/10/%E4%BB%BB%E5%8A%A1%E7%A9%BA%E9%97%B4%E6%83%AF%E9%87%8F%E6%95%B4%E5%BD%A2%E6%97%A0%E6%BA%90%E6%80%A7/" title="任务空间惯量整形无源性：比较PD+、计算力矩法与完全自然解耦法（FND）"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">任务空间惯量整形无源性：比较PD+、计算力矩法与完全自然解耦法（FND）</div></div><div class="info-2"><div class="info-item-1">做惯性矩阵$ M $整形，不考虑$\dot{M} = C + C^T$会丧失无源性。</div></div></div></a><a class="pagination-related" href="/2026/01/15/ZBC-EOE%E5%8A%9F%E8%83%BD%E4%BD%BF%E7%94%A8%E6%96%B9%E6%B3%95/" title="EOE功能使用方法"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">EOE功能使用方法</div></div><div class="info-2"><div class="info-item-1">3588网口绑定、路由转发及iDA连接配置</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>相关推荐</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2024/02/11/Odive%E7%A3%81%E9%93%BE%E8%A7%82%E6%B5%8B%E5%99%A8/" title="Odrive非线性磁链观测器"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2024-02-11</div><div class="info-item-2">Odrive非线性磁链观测器</div></div><div class="info-2"><div class="info-item-1">Odrive无感磁链观测器出自Junggi Lee等人2010年发表论文《Sensorless Control of Surface-Mount Permanent-Magnet Synchronous Motors Based on a Nonlinear Observer》</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/dog-icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">BeichenZhuo</div><div class="author-info-description">伺服&机器人技术笔记</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">67</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">143</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">2</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/BeichenZhuo"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">email：1435148110@qq.com</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E7%AC%A6%E5%8F%B7%E5%AE%9A%E4%B9%89%E4%B8%8E%E7%89%A9%E7%90%86%E5%90%AB%E4%B9%89"><span class="toc-number">1.</span> <span class="toc-text">1. 符号定义与物理含义</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E9%97%AE%E9%A2%98%E9%99%88%E8%BF%B0%E4%B8%8E%E6%8E%A8%E5%AF%BC%E7%9B%AE%E6%A0%87"><span class="toc-number">2.</span> <span class="toc-text">2. 问题陈述与推导目标</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E7%94%B5%E6%9C%BA%E7%AB%AF%E5%8A%A8%E5%8A%9B%E5%AD%A6%E6%96%B9%E7%A8%8B%EF%BC%88%E6%8E%A8%E5%AF%BC%E8%B5%B7%E7%82%B9%EF%BC%89"><span class="toc-number">3.</span> <span class="toc-text">3. 电机端动力学方程（推导起点）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-Slotine-Li-%E6%BB%91%E6%A8%A1%E9%9D%A2%E8%AE%BE%E8%AE%A1"><span class="toc-number">4.</span> <span class="toc-text">4. Slotine-Li 滑模面设计</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E5%AE%9A%E4%B9%89%E8%AF%AF%E5%B7%AE%E5%8F%98%E9%87%8F"><span class="toc-number">4.1.</span> <span class="toc-text">4.1 定义误差变量</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-%E5%AE%9A%E4%B9%89%E6%BB%91%E6%A8%A1%E9%9D%A2%EF%BC%88%E5%A4%8D%E5%90%88%E8%AF%AF%E5%B7%AE%EF%BC%89"><span class="toc-number">4.2.</span> <span class="toc-text">4.2 定义滑模面（复合误差）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-%E5%AE%9A%E4%B9%89%E5%8F%82%E8%80%83%E9%80%9F%E5%BA%A6"><span class="toc-number">4.3.</span> <span class="toc-text">4.3 定义参考速度</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-4-%E5%B0%86%E5%8A%A8%E5%8A%9B%E5%AD%A6%E6%94%B9%E5%86%99%E4%B8%BA%E8%AF%AF%E5%B7%AE%E5%BD%A2%E5%BC%8F"><span class="toc-number">4.4.</span> <span class="toc-text">4.4 将动力学改写为误差形式</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-LuGre-%E5%8A%A8%E6%80%81%E6%91%A9%E6%93%A6%E6%A8%A1%E5%9E%8B"><span class="toc-number">5.</span> <span class="toc-text">5. LuGre 动态摩擦模型</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-%E6%A8%A1%E5%9E%8B%E7%BB%93%E6%9E%84"><span class="toc-number">5.1.</span> <span class="toc-text">5.1 模型结构</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-%E5%86%85%E9%83%A8%E7%8A%B6%E6%80%81%E7%9A%84%E6%BC%94%E5%8C%96%E6%96%B9%E7%A8%8B%EF%BC%88%E8%AE%BA%E6%96%87%E5%85%AC%E5%BC%8F-11%EF%BC%89"><span class="toc-number">5.2.</span> <span class="toc-text">5.2 内部状态的演化方程（论文公式 11）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-%E5%85%B3%E9%94%AE%E8%A7%82%E5%AF%9F%EF%BC%9A%E4%B8%A4%E7%B1%BB%E6%9C%AA%E7%9F%A5%E9%87%8F"><span class="toc-number">5.3.</span> <span class="toc-text">5.3 关键观察：两类未知量</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E6%8E%A7%E5%88%B6%E5%BE%8B%E8%AE%BE%E8%AE%A1%EF%BC%88%E5%8F%91%E7%BB%99%E7%94%B5%E6%9C%BA%E7%9A%84%E6%8C%87%E4%BB%A4%EF%BC%89"><span class="toc-number">6.</span> <span class="toc-text">6. 控制律设计（发给电机的指令）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-%E9%97%AD%E7%8E%AF%E8%AF%AF%E5%B7%AE%E5%8A%A8%E6%80%81%E7%9A%84%E6%8E%A8%E5%AF%BC"><span class="toc-number">7.</span> <span class="toc-text">7. 闭环误差动态的推导</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-%E7%8A%B6%E6%80%81%E8%A7%82%E6%B5%8B%E5%99%A8%E8%AE%BE%E8%AE%A1"><span class="toc-number">8.</span> <span class="toc-text">8. 状态观测器设计</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#8-1-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81%E8%A7%82%E6%B5%8B%E5%99%A8%EF%BC%9F"><span class="toc-number">8.1.</span> <span class="toc-text">8.1 为什么需要观测器？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#8-2-%E8%A7%82%E6%B5%8B%E5%99%A8%E6%96%B9%E7%A8%8B"><span class="toc-number">8.2.</span> <span class="toc-text">8.2 观测器方程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#8-3-%E8%A7%82%E6%B5%8B%E8%AF%AF%E5%B7%AE%E5%8A%A8%E6%80%81%E6%8E%A8%E5%AF%BC"><span class="toc-number">8.3.</span> <span class="toc-text">8.3 观测误差动态推导</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#9-%E5%8F%82%E6%95%B0%E8%87%AA%E9%80%82%E5%BA%94%E5%BE%8B%E8%AE%BE%E8%AE%A1"><span class="toc-number">9.</span> <span class="toc-text">9. 参数自适应律设计</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#9-1-%E5%AE%9A%E4%B9%89%E5%8F%82%E6%95%B0%E4%BC%B0%E8%AE%A1%E8%AF%AF%E5%B7%AE"><span class="toc-number">9.1.</span> <span class="toc-text">9.1 定义参数估计误差</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#9-2-%E6%9E%84%E9%80%A0%E6%9D%8E%E9%9B%85%E6%99%AE%E8%AF%BA%E5%A4%AB%E5%80%99%E9%80%89%E5%87%BD%E6%95%B0"><span class="toc-number">9.2.</span> <span class="toc-text">9.2 构造李雅普诺夫候选函数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#9-3-%E5%AF%B9-V-%E6%B1%82%E5%AF%BC"><span class="toc-number">9.3.</span> <span class="toc-text">9.3 对 $V$ 求导</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#9-4-%E4%BB%A3%E5%85%A5%E8%A7%82%E6%B5%8B%E8%AF%AF%E5%B7%AE%E5%8A%A8%E6%80%81"><span class="toc-number">9.4.</span> <span class="toc-text">9.4 代入观测误差动态</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#9-5-%E4%BB%A3%E5%85%A5%E9%97%AD%E7%8E%AF%E8%AF%AF%E5%B7%AE%E5%8A%A8%E6%80%81"><span class="toc-number">9.5.</span> <span class="toc-text">9.5 代入闭环误差动态</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#9-6-%E5%A4%84%E7%90%86-hat-tau-f-tau-f-%E9%A1%B9-%E2%80%94%E2%80%94-%E8%BF%99%E6%98%AF%E6%8E%A8%E5%AF%BC%E7%9A%84%E5%85%B3%E9%94%AE%EF%BC%81"><span class="toc-number">9.6.</span> <span class="toc-text">9.6 处理 $\hat{\tau}_f - \tau_f$ 项 —— 这是推导的关键！</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#9-7-%E5%B0%86-25-%E4%BB%A3%E5%85%A5-24-%E5%B9%B6%E6%95%B4%E7%90%86"><span class="toc-number">9.7.</span> <span class="toc-text">9.7 将 (25) 代入 (24) 并整理</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#9-8-%E9%80%89%E6%8B%A9%E8%87%AA%E9%80%82%E5%BA%94%E5%BE%8B%E6%B6%88%E5%8E%BB-tilde-Phi-%E9%A1%B9"><span class="toc-number">9.8.</span> <span class="toc-text">9.8 选择自适应律消去 $\tilde{\Phi}$ 项</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#10-%E7%A8%B3%E5%AE%9A%E6%80%A7%E8%AF%81%E6%98%8E"><span class="toc-number">10.</span> <span class="toc-text">10. 稳定性证明</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#10-1-%E5%B0%86%E8%87%AA%E9%80%82%E5%BA%94%E5%BE%8B%E4%BB%A3%E5%85%A5-dot-V"><span class="toc-number">10.1.</span> <span class="toc-text">10.1 将自适应律代入 $\dot{V}$</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#10-2-%E5%88%86%E6%9E%90%E5%90%84%E9%A1%B9%E7%9A%84%E7%AC%A6%E5%8F%B7"><span class="toc-number">10.2.</span> <span class="toc-text">10.2 分析各项的符号</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#10-3-%E5%88%A9%E7%94%A8%E7%A7%AF%E5%88%86%E9%A1%B9%E7%9A%84%E8%80%97%E6%95%A3%E6%80%A7%E8%B4%A8"><span class="toc-number">10.3.</span> <span class="toc-text">10.3 利用积分项的耗散性质</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#10-4-%E6%9E%84%E9%80%A0%E4%BF%AE%E6%AD%A3%E7%9A%84%E6%9D%8E%E9%9B%85%E6%99%AE%E8%AF%BA%E5%A4%AB%E5%87%BD%E6%95%B0"><span class="toc-number">10.4.</span> <span class="toc-text">10.4 构造修正的李雅普诺夫函数</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#10-5-%E5%85%B3%E9%94%AE%E7%BB%93%E8%AE%BA"><span class="toc-number">10.5.</span> <span class="toc-text">10.5 关键结论</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#11-%E7%A6%BB%E6%95%A3%E5%8C%96%E8%BF%AD%E4%BB%A3%E7%AE%97%E6%B3%95%EF%BC%88%E5%8F%AF%E7%9B%B4%E6%8E%A5%E5%86%99%E4%BB%A3%E7%A0%81%EF%BC%89"><span class="toc-number">11.</span> <span class="toc-text">11. 离散化迭代算法（可直接写代码）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#12-%E5%A4%9A%E7%BB%B4%E6%8E%A8%E5%B9%BF%EF%BC%88%E8%AE%BA%E6%96%87%E5%85%AC%E5%BC%8F-46%EF%BC%89"><span class="toc-number">12.</span> <span class="toc-text">12. 多维推广（论文公式 46）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#13-%E8%AE%BE%E8%AE%A1%E5%8F%82%E6%95%B0%E9%80%89%E6%8B%A9%E6%8C%87%E5%8D%97"><span class="toc-number">13.</span> <span class="toc-text">13. 设计参数选择指南</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#14-%E6%80%BB%E7%BB%93"><span class="toc-number">14.</span> <span class="toc-text">14. 总结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%99%84%E5%BD%95-A%EF%BC%9A%E7%AC%A6%E5%8F%B7%E5%AF%B9%E7%85%A7%E8%A1%A8%EF%BC%88%E8%AE%BA%E6%96%87%E5%85%AC%E5%BC%8F%E6%98%A0%E5%B0%84%EF%BC%89"><span class="toc-number">15.</span> <span class="toc-text">附录 A：符号对照表（论文公式映射）</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/11/Pinocchio%E4%BB%A3%E7%A0%81%E9%98%85%E8%AF%BB%E2%80%94%E2%80%94%E4%BA%8C%E7%BB%B4%E5%88%9A%E4%BD%93%E8%BF%90%E5%8A%A8/" title="Pinocchio代码阅读——二维刚体运动">Pinocchio代码阅读——二维刚体运动</a><time datetime="2026-09-06T11:14:47.089Z" title="更新于 2026-09-06 19:14:47">2026-09-06</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/08/30/122333/" title="文档标题">文档标题</a><time datetime="2026-08-31T00:58:10.432Z" title="更新于 2026-08-31 08:58:10">2026-08-31</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/01/05/%E4%BF%9D%E7%95%99%E6%9F%94%E6%80%A7%E7%BB%93%E6%9E%84%E7%9A%84%E5%85%B3%E8%8A%82%E6%8E%A7%E5%88%B6/" title="保留柔性结构的关节控制——ESP/ESπ">保留柔性结构的关节控制——ESP/ESπ</a><time datetime="2026-07-19T22:49:41.609Z" title="更新于 2026-07-20 06:49:41">2026-07-20</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/01/18/%E5%9F%BA%E4%BA%8E%20LuGre%20%E6%A8%A1%E5%9E%8B%E7%9A%84%20Slotine-Li%20%E6%91%A9%E6%93%A6%E8%A7%82%E6%B5%8B%E5%99%A8/" title="基于 LuGre 模型的 Slotine-Li 摩擦观测器">基于 LuGre 模型的 Slotine-Li 摩擦观测器</a><time datetime="2026-07-19T18:44:55.352Z" title="更新于 2026-07-20 02:44:55">2026-07-20</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/02/11/Odive%E7%A3%81%E9%93%BE%E8%A7%82%E6%B5%8B%E5%99%A8/" title="Odrive非线性磁链观测器">Odrive非线性磁链观测器</a><time datetime="2026-07-19T18:00:22.103Z" title="更新于 2026-07-20 02:00:22">2026-07-20</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2023 - 2026 By BeichenZhuo</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.5</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.5"></script><script src="/js/main.js?v=5.5.5"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.1.2/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script><script>(() => {
+  const parseViewBox = viewBox => {
+    if (!viewBox) return null
+    const parts = viewBox.trim().split(/[\s,]+/).map(n => Number(n))
+    if (parts.length !== 4 || parts.some(n => Number.isNaN(n))) return null
+    return parts
+  }
+
+  const getSvgViewBox = svg => {
+    const attr = parseViewBox(svg.getAttribute('viewBox'))
+    if (attr) return attr
+
+    // Fallback: use bbox to build a viewBox
+    try {
+      const bbox = svg.getBBox()
+      if (bbox && bbox.width && bbox.height) return [bbox.x, bbox.y, bbox.width, bbox.height]
+    } catch (e) {
+      // getBBox may fail on some edge cases; ignore
+    }
+
+    const w = Number(svg.getAttribute('width')) || 0
+    const h = Number(svg.getAttribute('height')) || 0
+    if (w > 0 && h > 0) return [0, 0, w, h]
+    return [0, 0, 100, 100]
+  }
+
+  const setSvgViewBox = (svg, vb) => {
+    svg.setAttribute('viewBox', `${vb[0]} ${vb[1]} ${vb[2]} ${vb[3]}`)
+  }
+
+  const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
+
+  const openSvgInNewTab = ({ source, initViewBox }) => {
+    const getClonedSvg = () => {
+      if (typeof source === 'string') {
+        const template = document.createElement('template')
+        template.innerHTML = source.trim()
+        const svg = template.content.querySelector('svg')
+        return svg ? svg.cloneNode(true) : null
+      }
+      if (source && typeof source.cloneNode === 'function') {
+        return source.cloneNode(true)
+      }
+      return null
+    }
+
+    const clone = getClonedSvg()
+    if (!clone) return
+    if (initViewBox && initViewBox.length === 4) {
+      clone.setAttribute('viewBox', initViewBox.join(' '))
+    }
+    if (!clone.getAttribute('xmlns')) clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+    if (!clone.getAttribute('xmlns:xlink') && clone.outerHTML.includes('xlink:')) {
+      clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
+    }
+    // inject background to match current theme
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark'
+    const bg = getComputedStyle(document.body).backgroundColor || (isDark ? '#1e1e1e' : '#ffffff')
+    if (!clone.style.background) clone.style.background = bg
+
+    const serializer = new XMLSerializer()
+    const svgSource = serializer.serializeToString(clone)
+    const htmlSource = `<!doctype html><html><head><meta charset="utf-8" />
+      <style>
+        html, body { width: 100%; height: 100%; margin: 0; display: flex; align-items: center; justify-content: center; background: ${bg}; }
+        svg { max-width: 100%; max-height: 100%; height: auto; width: auto; }
+      </style>
+      </head><body>${svgSource}</body></html>`
+    const blob = new Blob([htmlSource], { type: 'text/html;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank', 'noopener')
+    setTimeout(() => URL.revokeObjectURL(url), 30000)
+  }
+
+  const attachMermaidViewerButton = wrap => {
+    let btn = wrap.querySelector('.mermaid-open-btn')
+    if (!btn) {
+      btn = document.createElement('button')
+      btn.type = 'button'
+      btn.className = 'mermaid-open-btn'
+      wrap.appendChild(btn)
+    }
+
+    btn.innerHTML = '<i class="fa fa-search fa-fw" aria-hidden="true"></i>'
+
+    if (!btn.__mermaidViewerBound) {
+      btn.addEventListener('click', e => {
+        e.preventDefault()
+        e.stopPropagation()
+        const svg = wrap.__mermaidOriginalSvg || wrap.querySelector('svg')
+        if (!svg) return
+        const initViewBox = wrap.__mermaidInitViewBox
+        if (typeof svg === 'string') {
+          openSvgInNewTab({ source: svg, initViewBox })
+          return
+        }
+        openSvgInNewTab({ source: svg, initViewBox })
+      })
+      btn.__mermaidViewerBound = true
+    }
+  }
+
+  // Zoom around a point (px, py) in the SVG viewport (in viewBox coordinates)
+  const zoomAtPoint = (vb, factor, px, py) => {
+    const w = vb[2] * factor
+    const h = vb[3] * factor
+    const nx = px - (px - vb[0]) * factor
+    const ny = py - (py - vb[1]) * factor
+    return [nx, ny, w, h]
+  }
+
+  const initMermaidGestures = wrap => {
+    const svg = wrap.querySelector('svg')
+    if (!svg) return
+
+    // Ensure viewBox exists so gestures always work
+    const initVb = getSvgViewBox(svg)
+    wrap.__mermaidInitViewBox = initVb
+    wrap.__mermaidCurViewBox = initVb.slice()
+    setSvgViewBox(svg, initVb)
+
+    // Avoid binding multiple times on themeChange/pjax
+    if (wrap.__mermaidGestureBound) return
+    wrap.__mermaidGestureBound = true
+
+    // Helper: map client (viewport) coordinate -> viewBox coordinate
+    const clientToViewBox = (clientX, clientY) => {
+      const rect = svg.getBoundingClientRect()
+      const vb = wrap.__mermaidCurViewBox || getSvgViewBox(svg)
+      const x = vb[0] + (clientX - rect.left) * (vb[2] / rect.width)
+      const y = vb[1] + (clientY - rect.top) * (vb[3] / rect.height)
+      return { x, y, rect, vb }
+    }
+
+    const state = {
+      pointers: new Map(),
+      startVb: null,
+      startDist: 0,
+      startCenter: null
+    }
+
+    const clampVb = vb => {
+      const init = wrap.__mermaidInitViewBox || vb
+      const minW = init[2] * 0.1
+      const maxW = init[2] * 10
+      const minH = init[3] * 0.1
+      const maxH = init[3] * 10
+      vb[2] = clamp(vb[2], minW, maxW)
+      vb[3] = clamp(vb[3], minH, maxH)
+      return vb
+    }
+
+    const setCurVb = vb => {
+      vb = clampVb(vb)
+      wrap.__mermaidCurViewBox = vb
+      setSvgViewBox(svg, vb)
+    }
+
+    const onPointerDown = e => {
+      // Allow only primary button for mouse
+      if (e.pointerType === 'mouse' && e.button !== 0) return
+      svg.setPointerCapture(e.pointerId)
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      if (state.pointers.size === 1) {
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      } else if (state.pointers.size === 2) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        state.startDist = Math.hypot(dx, dy)
+        state.startVb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        state.startCenter = { x: (pts[0].x + pts[1].x) / 2, y: (pts[0].y + pts[1].y) / 2 }
+      }
+    }
+
+    const onPointerMove = e => {
+      if (!state.pointers.has(e.pointerId)) return
+      state.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+      // Pan with 1 pointer
+      if (state.pointers.size === 1 && state.startVb) {
+        const p = [...state.pointers.values()][0]
+        const prev = { x: e.clientX - e.movementX, y: e.clientY - e.movementY }
+        // movementX/Y unreliable on touch, compute from stored last position
+        const last = wrap.__mermaidLastSinglePointer || p
+        const dxClient = p.x - last.x
+        const dyClient = p.y - last.y
+        wrap.__mermaidLastSinglePointer = p
+
+        const { rect } = clientToViewBox(p.x, p.y)
+        const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+        const dx = dxClient * (vb[2] / rect.width)
+        const dy = dyClient * (vb[3] / rect.height)
+        setCurVb([vb[0] - dx, vb[1] - dy, vb[2], vb[3]])
+        return
+      }
+
+      // Pinch zoom with 2 pointers
+      if (state.pointers.size === 2 && state.startVb && state.startDist > 0) {
+        const pts = [...state.pointers.values()]
+        const dx = pts[0].x - pts[1].x
+        const dy = pts[0].y - pts[1].y
+        const dist = Math.hypot(dx, dy)
+        if (!dist) return
+        const factor = state.startDist / dist // dist bigger => zoom in (viewBox smaller)
+
+        const cx = (pts[0].x + pts[1].x) / 2
+        const cy = (pts[0].y + pts[1].y) / 2
+        const centerClient = { x: cx, y: cy }
+
+        const pxy = clientToViewBox(centerClient.x, centerClient.y)
+        const cpx = pxy.x
+        const cpy = pxy.y
+
+        const vb = zoomAtPoint(state.startVb, factor, cpx, cpy)
+        setCurVb(vb)
+      }
+    }
+
+    const onPointerUpOrCancel = e => {
+      state.pointers.delete(e.pointerId)
+      if (state.pointers.size === 0) {
+        state.startVb = null
+        state.startDist = 0
+        state.startCenter = null
+        wrap.__mermaidLastSinglePointer = null
+      } else if (state.pointers.size === 1) {
+        // reset single pointer baseline to avoid jump
+        wrap.__mermaidLastSinglePointer = [...state.pointers.values()][0]
+      }
+    }
+
+    // Wheel zoom (mouse/trackpad)
+    const onWheel = e => {
+      // ctrlKey on mac trackpad pinch; we treat both as zoom
+      e.preventDefault()
+      const delta = e.deltaY
+      const zoomFactor = delta > 0 ? 1.1 : 0.9
+      const { x, y } = clientToViewBox(e.clientX, e.clientY)
+      const vb = (wrap.__mermaidCurViewBox || getSvgViewBox(svg)).slice()
+      setCurVb(zoomAtPoint(vb, zoomFactor, x, y))
+    }
+
+    const onDblClick = () => {
+      const init = wrap.__mermaidInitViewBox
+      if (!init) return
+      wrap.__mermaidCurViewBox = init.slice()
+      setSvgViewBox(svg, init)
+    }
+
+    svg.addEventListener('pointerdown', onPointerDown)
+    svg.addEventListener('pointermove', onPointerMove)
+    svg.addEventListener('pointerup', onPointerUpOrCancel)
+    svg.addEventListener('pointercancel', onPointerUpOrCancel)
+    svg.addEventListener('wheel', onWheel, { passive: false })
+    svg.addEventListener('dblclick', onDblClick)
+  }
+
+  const runMermaid = ele => {
+    window.loadMermaid = true
+    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default'
+
+    ele.forEach((item, index) => {
+      const mermaidSrc = item.firstElementChild
+
+      // Clear old render (themeChange/pjax will rerun)
+      const oldSvg = item.querySelector('svg')
+      if (oldSvg) oldSvg.remove()
+      item.__mermaidGestureBound = false
+
+      const config = mermaidSrc.dataset.config ? JSON.parse(mermaidSrc.dataset.config) : {}
+      if (!config.theme) {
+        config.theme = theme
+      }
+      const mermaidThemeConfig = `%%{init: ${JSON.stringify(config)}}%%\n`
+      const mermaidID = `mermaid-${index}`
+      const mermaidDefinition = mermaidThemeConfig + mermaidSrc.textContent
+
+      const renderFn = mermaid.render(mermaidID, mermaidDefinition)
+      const renderMermaid = svg => {
+        mermaidSrc.insertAdjacentHTML('afterend', svg)
+        if (true) initMermaidGestures(item)
+        item.__mermaidOriginalSvg = svg
+        if (true) attachMermaidViewerButton(item)
+      }
+
+
+      // mermaid v9 and v10 compatibility
+      typeof renderFn === 'string' ? renderMermaid(renderFn) : renderFn.then(({ svg }) => renderMermaid(svg))
+    })
+  }
+
+  const codeToMermaid = () => {
+    const codeMermaidEle = document.querySelectorAll('pre > code.mermaid')
+    if (codeMermaidEle.length === 0) return
+
+    codeMermaidEle.forEach(ele => {
+      const preEle = document.createElement('pre')
+      preEle.className = 'mermaid-src'
+      preEle.hidden = true
+      preEle.textContent = ele.textContent
+      const newEle = document.createElement('div')
+      newEle.className = 'mermaid-wrap'
+      newEle.appendChild(preEle)
+      ele.parentNode.replaceWith(newEle)
+    })
+  }
+
+  const loadMermaid = () => {
+    if (true) codeToMermaid()
+    const $mermaid = document.querySelectorAll('#article-container .mermaid-wrap')
+    if ($mermaid.length === 0) return
+
+    const runMermaidFn = () => runMermaid($mermaid)
+    btf.addGlobalFn('themeChange', runMermaidFn, 'mermaid')
+    window.loadMermaid ? runMermaidFn() : btf.getScript('https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.min.js').then(runMermaidFn)
+  }
+
+  btf.addGlobalFn('encrypt', loadMermaid, 'mermaid')
+  window.pjax ? loadMermaid() : document.addEventListener('DOMContentLoaded', loadMermaid)
+})()</script></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><div id="local-search"><div class="search-dialog"><nav class="search-nav"><span class="search-dialog-title">搜索</span><i class="fas fa-spinner fa-pulse" id="loading-status" hidden="hidden"></i><button class="search-close-button"><i class="fas fa-times"></i></button></nav><div class="text-center" id="loading-database"><i class="fas fa-spinner fa-pulse"></i><span>  数据加载中</span></div><div class="local-search-input"><input placeholder="搜索文章" type="text"/></div><hr/><div id="local-search-results"></div><div class="ais-Pagination" id="local-search-pagination" style="display:none;"><ul class="ais-Pagination-list"></ul></div><div id="local-search-stats"></div></div><div id="search-mask"></div><script src="/js/search/local-search.js?v=5.5.5"></script></div></div></body></html>
